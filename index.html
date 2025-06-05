@@ -1,0 +1,5021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeoGest - Smart Home Control</title>
+  
+  <!-- Three.js and Vanta.js dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.halo.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.clouds.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.cells.min.js"></script>
+  
+  <!-- Initialize Vanta.js -->
+  <script>
+    (function() {
+      document.addEventListener('DOMContentLoaded', function() {
+
+          const mainContainer = document.getElementById('background-container');
+          if (mainContainer) {
+            if (window.mainVantaEffect) {
+              window.mainVantaEffect.destroy();
+            }
+
+            window.mainVantaEffect = VANTA.CLOUDS({
+              el: mainContainer,
+              mouseControls: true,
+              touchControls: true,
+              gyroControls: false,
+              minHeight: 200.00,
+              minWidth: 200.00,
+              scale: 1.00,
+              scaleMobile: 1.00,
+              backgroundColor: 0x001220,
+              skyColor: 0x68b8d7,
+              cloudColor: 0xadc1de,
+              cloudShadowColor: 0x183550,
+              sunColor: 0xff9919,
+              sunGlareColor: 0xff6633,
+              sunlightColor: 0xff9933,
+              speed: 0.6,
+              texturePath: null,
+              zoom: 1.5,
+              cloudWidth: 0.8,
+              cloudHeight: 0.8,
+              backgroundAlpha: 1
+            });
+          }
+        });
+    })();
+  </script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- React and Babel CDNs -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js" crossorigin></script>
+
+  <!-- ESP32 Configuration -->
+  <script>
+    window.ESP32_CONFIG = {
+      IP_ADDRESS: localStorage.getItem('esp32IpAddress') || '192.168.4.1',
+      ENDPOINTS: {
+        STATUS: '/status',
+        HEALTH: '/health',
+        COMMAND: '/command'
+      }
+    };
+  </script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Add Lodash -->
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+
+  <!-- Update MediaPipe Hands library paths -->
+  <script src="hands-0.4.1675469240/package/hands.js"></script>
+  <script src="/static/js/camera_utils.js"></script>
+  <script src="/static/js/drawing_utils.js"></script>
+
+  <!-- P5.js for Topology effect -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.topology.min.js"></script>
+
+  <!-- MediaPipe Dependencies (in correct order) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <script type="text/javascript">
+  // Add error checking for MediaPipe loading
+  window.addEventListener('load', function() {
+      if (!window.Hands) {
+          console.error('MediaPipe Hands failed to load');
+          document.getElementById('errorMessage').textContent = 'Failed to load hand tracking library. Please refresh the page.';
+      }
+  });
+  </script>
+
+  <!-- Add Google OAuth Script -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Add Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-storage.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+  <!-- Firebase Initialization -->
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "your-sender-id",
+      appId: "your-app-id"
+    };
+
+    // Initialize Firebase and services
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    
+    // Collection references
+    const usersRef = db.collection('users');
+    const devicesRef = db.collection('devices');
+    const ordersRef = db.collection('orders');
+    const productsRef = db.collection('products');
+    const deviceLogsRef = db.collection('deviceLogs');
+  </script>
+
+  <style>
+    /* Reset and base styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      overflow: hidden;
+      background-color: #001220;
+    }
+
+    #background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background-color: #001220 !important;
+      color: white;
+      overflow: hidden;
+    }
+
+    /* Background containers - for Vanta.js */
+    #background-container, #control-background {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 0 !important;
+      pointer-events: none !important;
+      transform: translateZ(0) !important;
+      backface-visibility: hidden !important;
+      perspective: 1000px !important;
+      will-change: transform !important;
+      -webkit-transform-style: preserve-3d !important;
+      transform-style: preserve-3d !important;
+      -webkit-backface-visibility: hidden !important;
+      -moz-backface-visibility: hidden !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    
+    #control-background {
+      position: absolute !important;
+      z-index: 1 !important;
+    }
+
+    /* Background container */
+    #background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* Root container - for React app */
+    #root {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      color: white;
+      background: transparent;
+    }
+
+    /* Content wrapper - for main content */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      pointer-events: auto;
+      background: transparent;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .scroll-container {
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      z-index: 1;
+    }
+
+        .pointer-none {
+        pointer-events: none;
+      }
+
+    /* Content wrapper */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      pointer-events: auto;
+      background: transparent !important;
+    }
+
+    /* Section styles */
+    .section-container {
+      min-height: 100vh;
+      padding: 80px 20px;
+      position: relative;
+      overflow-y: auto;
+      background: transparent !important;
+    }
+
+    /* Make sections scrollable */
+    .scrollable-section {
+      min-height: 100vh;
+      overflow-y: auto;
+      padding: 80px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Modern card styles */
+    .modern-card {
+      background: transparent;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .control-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modern-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Modern button styles */
+    .modern-button {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .modern-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .modern-button.secondary {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+    }
+
+    .modern-button.accent {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+
+    /* Cart styles */
+    .cart-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+      .cart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quantity-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quantity-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Animation classes */
+    .slide-up {
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fade-in-scale {
+      animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideUp {
+      from { 
+        transform: translateY(40px); 
+        opacity: 0; 
+      }
+      to { 
+        transform: translateY(0); 
+        opacity: 1; 
+      }
+    }
+
+    @keyframes fadeInScale {
+      from { 
+        transform: scale(0.95) translateZ(0); 
+        opacity: 0; 
+      }
+      to { 
+        transform: scale(1) translateZ(0); 
+        opacity: 1; 
+      }
+    }
+
+    /* Additional Styles */
+    .content-container {
+      position: relative;
+      z-index: 1;
+      padding-top: 6rem;
+    }
+
+    /* Glass Panel Styles */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Enhanced Animations */
+    @keyframes slideInLeft {
+      from {
+        transform: translateX(-100%) translateZ(0);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) translateZ(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%) translateZ(0);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) translateZ(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .slide-in-left {
+      animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .slide-in-right {
+      animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    .scale-in {
+      animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Staggered animations */
+    .stagger-item {
+      opacity: 0;
+    }
+
+    .stagger-item:nth-child(1) { animation-delay: 0.1s; }
+    .stagger-item:nth-child(2) { animation-delay: 0.2s; }
+    .stagger-item:nth-child(3) { animation-delay: 0.3s; }
+    .stagger-item:nth-child(4) { animation-delay: 0.4s; }
+    .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+
+    /* Navigation improvements */
+    .nav-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      position: fixed;
+      width: 100%;
+      z-index: 30;
+    }
+
+    @keyframes slideDown {
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    .nav-link {
+      position: relative;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: currentColor;
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* Card hover effects */
+    .card-content {
+      background: transparent;
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.5s ease-in-out;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+      transition: opacity 0.5s ease-in-out;
+      opacity: 0;
+    }
+
+    .card-content.control::before {
+      background: linear-gradient(135deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+      opacity: 1;
+    }
+
+    .card-content.shop::before {
+      background: linear-gradient(135deg, #0093E9 0%, #80D0C7 100%);
+      opacity: 1;
+    }
+
+    .card-content.about::before {
+      background: linear-gradient(135deg, #8EC5FC 0%, #E0C3FC 100%);
+      opacity: 1;
+    }
+
+    .card-content.learn::before {
+      background: linear-gradient(135deg, #85FFBD 0%, #FFFB7D 100%);
+      opacity: 1;
+    }
+
+    .card-content:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Card text colors */
+    .card-content.control h3,
+    .card-content.control p {
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-content.shop h3,
+    .card-content.shop p {
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-content.about h3,
+    .card-content.about p {
+      color: #2d3748;
+      text-shadow: 0 2px 4px rgba(255,255,255,0.3);
+    }
+
+    .card-content.learn h3,
+    .card-content.learn p {
+      color: #2d3748;
+      text-shadow: 0 2px 4px rgba(255,255,255,0.3);
+    }
+
+    /* Button animations */
+    .animated-button {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .animated-button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+
+    .animated-button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    /* Typography improvements */
+    h1 {
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+    }
+
+    p {
+      line-height: 1.6;
+      letter-spacing: -0.01em;
+    }
+
+    /* Button styles */
+    button {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+      transition: all 0.3s ease;
+    }
+
+    /* Card styles */
+    .card-content {
+      background: transparent;
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.5s ease-in-out;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+      transition: opacity 0.5s ease-in-out;
+      opacity: 0;
+    }
+
+    .card-content.control::before {
+      background: linear-gradient(135deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+      opacity: 1;
+    }
+
+    .card-content.shop::before {
+      background: linear-gradient(135deg, #0093E9 0%, #80D0C7 100%);
+      opacity: 1;
+    }
+
+    .card-content.about::before {
+      background: linear-gradient(135deg, #8EC5FC 0%, #E0C3FC 100%);
+      opacity: 1;
+    }
+
+    .card-content.learn::before {
+      background: linear-gradient(135deg, #85FFBD 0%, #FFFB7D 100%);
+      opacity: 1;
+    }
+
+    .card-content:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Card text colors */
+    .card-content.control h3,
+    .card-content.control p {
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-content.shop h3,
+    .card-content.shop p {
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-content.about h3,
+    .card-content.about p {
+      color: #2d3748;
+      text-shadow: 0 2px 4px rgba(255,255,255,0.3);
+    }
+
+    .card-content.learn h3,
+    .card-content.learn p {
+      color: #2d3748;
+      text-shadow: 0 2px 4px rgba(255,255,255,0.3);
+    }
+
+    /* Navigation styles */
+    .nav-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-link {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+    }
+
+    /* Existing animations and styles */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 1s ease-in-out forwards;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .float {
+      animation: float 3s ease-in-out infinite;
+    }
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+    body {
+      transition: background 0.7s ease, background-image 0.7s ease, opacity 0.7s ease;
+      position: relative;
+      overflow-x: hidden;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      z-index: -1;
+      transition: transform 0.7s ease, opacity 0.7s ease;
+      transform-origin: center;
+    }
+    body.transition-zoom::before {
+      transform: scale(1.05);
+      opacity: 0.8;
+    }
+    section {
+      min-height: 100vh;
+      padding: 80px 20px;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+    .non-scrollable {
+      height: 100vh;
+      overflow: hidden;
+    }
+    .scrollable {
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    @media (max-height: 700px) {
+      section {
+        padding-top: 3rem;
+      }
+    }
+    .tab {
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .tab:hover {
+      background-color: #e5e7eb;
+      transform: scale(1.05);
+    }
+    .video-container {
+      width: 100%;
+      max-width: 448px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      background: #000;
+      margin: 0 auto;
+      position: relative;
+      aspect-ratio: 4 / 3;
+    }
+    @media (max-width: 640px) {
+      .video-container {
+        max-width: 320px;
+      }
+    }
+    @media (max-height: 700px) {
+      .video-container {
+        max-width: 320px;
+      }
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform: scaleX(-1);
+      object-fit: cover;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: scaleX(-1);
+    }
+    
+    .page-transition {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform, opacity;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .slide-in-right {
+      transform: translateX(0);
+      opacity: 1;
+      filter: blur(0);
+    }
+    .slide-out-left {
+      transform: translateX(-100%);
+      opacity: 0;
+      filter: blur(5px);
+    }
+    .slide-in-left {
+      transform: translateX(0);
+      opacity: 1;
+      filter: blur(0);
+    }
+    .slide-out-right {
+      transform: translateX(100%);
+      opacity: 0;
+      filter: blur(5px);
+    }
+    .initial {
+      transform: translateX(0);
+      opacity: 1;
+      filter: blur(0);
+    }
+    .initial-back {
+      transform: translateX(-100%);
+      opacity: 0;
+      filter: blur(5px);
+    }
+    .content-container > * {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    }
+    .content-enter > * {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .content-enter > *:nth-child(1) { transition-delay: 0.1s; }
+    .content-enter > *:nth-child(2) { transition-delay: 0.2s; }
+    .content-enter > *:nth-child(3) { transition-delay: 0.3s; }
+    .content-enter > *:nth-child(4) { transition-delay: 0.4s; }
+    .content-enter > *:nth-child(5) { transition-delay: 0.5s; }
+    .content-exit > * {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    .tab-content {
+      transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    }
+    .tab-slide-in-right {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .tab-slide-out-left {
+      transform: translateX(-50%);
+      opacity: 0;
+    }
+    .tab-slide-in-left {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .tab-slide-out-right {
+      transform: translateX(50%);
+      opacity: 0;
+    }
+    .tab-initial {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .button-transition {
+      transition: opacity 0.7s ease-in-out;
+    }
+    .button-enter {
+      opacity: 0;
+    }
+    .button-visible {
+      opacity: 1;
+    }
+    .button-exit {
+      opacity: 0;
+    }
+    header {
+      padding: 1rem 1.5rem;
+    }
+    button {
+      z-index: 20;
+    }
+    .nav-link {
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    .nav-link:hover {
+      color: #2b6cb0;
+    }
+    .nav-button {
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+    }
+    .nav-button:hover {
+      background-color: #e5e7eb;
+    }
+    .carousel-container {
+      width: 100%;
+      max-width: 700px;
+      height: 300px;
+      position: relative;
+      z-index: 10;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .carousel-3d {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: fit-content;
+      height: 100%;
+      padding: 0 50px;
+      transition: transform 0.5s ease-in-out;
+    }
+    .card-container {
+      width: 150px;
+      height: 190px;
+      flex: 0 0 auto;
+      transition: opacity 0.5s ease-in-out;
+      opacity: 0.5;
+    }
+    .card-container.active {
+      opacity: 1;
+    }
+    .carousel-arrow {
+      position: absolute;
+      top: 40%;
+      transform: translateY(-50%);
+      background: rgba(45, 212, 191, 0.8);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+      z-index: 20;
+    }
+    .carousel-arrow:hover {
+      background: rgba(45, 212, 191, 1);
+      transform: scale(1.1);
+    }
+    .carousel-arrow.left {
+      left: 0;
+    }
+    .carousel-arrow.right {
+      right: 0;
+    }
+    @media (max-width: 640px) {
+      .carousel-container {
+        max-width: 300px;
+        height: 250px;
+      }
+      .carousel-3d {
+        padding: 0 40px;
+      }
+      .card-container {
+        width: 120px;
+        height: 160px;
+      }
+      .card-content img {
+        width: 120px !important;
+        height: 120px !important;
+      }
+      .carousel-arrow {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+      }
+    }
+    .learn-more-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 800px;
+      padding: 0 16px;
+    }
+    .learn-more-card {
+      background: linear-gradient(145deg, #1f2937, #374151);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      padding: 16px;
+      text-align: center;
+      height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .learn-more-card img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .learn-more-card h4 {
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .learn-more-card p {
+      color: #d1d5db;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    @media (max-width: 640px) {
+      .learn-more-cards {
+        grid-template-columns: 1fr;
+      }
+      .learn-more-card {
+        height: 260px;
+      }
+      .learn-more-card img {
+        width: 80px;
+        height: 80px;
+      }
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-text {
+      animation: fadeInText 1s ease-in-out forwards;
+    }
+    @keyframes underline {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    .underline-animation {
+      position: relative;
+    }
+    .underline-animation::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: #2dd4bf;
+      animation: underline 1s ease-in-out forwards;
+      animation-delay: 0.5s;
+    }
+    @keyframes rotate3D {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(360deg); }
+    }
+    .rotate-3d {
+      animation: rotate3D 6s linear infinite;
+      perspective: 1000px;
+    }
+    .product-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      max-width: 800px;
+      padding: 0 16px;
+    }
+    .product-image-container {
+      width: 300px;
+      height: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .product-image-container img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+    }
+    .product-info {
+      flex: 1;
+      color: white;
+    }
+    @media (max-width: 640px) {
+      .product-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .product-image-container {
+        width: 200px;
+        height: 200px;
+      }
+      .product-image-container img {
+        width: 150px;
+        height: 150px;
+      }
+    }
+    .cart-form {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .cart-form label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1f2937;
+      font-weight: 600;
+    }
+    .cart-form input,
+    .cart-form select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      color: #1f2937;
+    }
+    .order-summary {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .payment-option {
+      margin-bottom: 16px;
+    }
+    .payment-option label {
+      margin-right: 16px;
+    }
+    .profile-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .profile-container label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1f2937;
+      font-weight: 600;
+    }
+    .profile-container input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      color: #1f2937;
+    }
+    .order-history {
+      margin-top: 24px;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .order-history-item {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+    .order-history-item:last-child {
+      border-bottom: none;
+    }
+    .menu-item {
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .menu-item:hover {
+      background-color: #f9fafb;
+      transform: translateX(4px);
+    }
+    .profile-info p {
+      line-height: 1.6;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .modal {
+      transition: opacity 0.3s ease;
+    }
+    .modal-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .modal-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .profile-pic {
+      object-fit: cover;
+    }
+    .profile-sidebar {
+      border-right: 1px solid #e5e7eb;
+    }
+    @media (max-width: 1024px) {
+      .profile-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+      }
+    }
+    .confirmation-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #2dd4bf;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin: 16px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Text animation styles */
+    @keyframes glowText {
+      0%, 100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+      50% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.4); }
+    }
+
+    @keyframes typewriter {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    .typewriter {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 3px solid white;
+      width: 0;
+      animation: typewriter 4s steps(44) 1s forwards;
+    }
+
+    .glow-text {
+      animation: glowText 2s ease-in-out infinite;
+      background: linear-gradient(120deg, #ff6b6b, #4ecdc4, #45b649);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 0.4s; }
+    .delay-3 { animation-delay: 0.6s; }
+
+    /* Enhanced cart page styles */
+    .cart-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 24px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .cart-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .cart-item img {
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .cart-item img:hover {
+      transform: scale(1.05);
+    }
+
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 12px;
+    }
+
+    .quantity-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .quantity-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    /* Control page centering fix */
+    .control-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .control-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      width: 100%;
+    }
+
+    .control-tab {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      min-width: 160px;
+      text-align: center;
+    }
+
+    /* Additional performance optimizations */
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-attachment: fixed;
+      will-change: transform;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Smooth scrolling container */
+    .scroll-container {
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Hardware acceleration for animations */
+    .animate-gpu {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+      will-change: transform, opacity;
+    }
+
+    /* Optimize card animations */
+    .card-container {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-content {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform, opacity;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Optimize carousel */
+    .carousel-container {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      overflow: visible !important;
+    }
+
+    .carousel-3d {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Background container fixes */
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      background-color: #001220;
+    }
+
+    /* Content wrapper */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      width: 100%;
+      pointer-events: auto;
+    }
+
+    /* Modern card button styles */
+    .modern-card-button {
+      position: relative;
+      padding: 1rem 2.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .modern-card-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.2)
+      );
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+
+    .modern-card-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .modern-card-button:hover::before {
+      transform: translateX(100%);
+    }
+
+    .button-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .carousel-arrow {
+      background: rgba(45, 212, 191, 0.2);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(45, 212, 191, 0.3);
+      border-color: rgba(45, 212, 191, 0.5);
+      transform: scale(1.1);
+    }
+
+    .carousel-arrow.left {
+      left: -20px;
+    }
+
+    .carousel-arrow.right {
+      right: -20px;
+    }
+
+    .glow-text {
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+      to {
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
+                     0 0 30px rgba(45, 212, 191, 0.6);
+      }
+    }
+
+    /* Add these new button and card styles */
+    /* Animated Button Styles */
+    .control-tab, .modern-button, .nav-button, button[type="submit"], .carousel-arrow {
+      background: linear-gradient(45deg, #3fa9f5, #4158d0);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(63, 169, 245, 0.2);
+      border-radius: 4px !important;
+    }
+
+    .control-tab:hover, .modern-button:hover, .nav-button:hover, button[type="submit"]:hover, .carousel-arrow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(63, 169, 245, 0.3);
+    }
+
+    .control-tab::before, .modern-button::before, .nav-button::before, button[type="submit"]::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: 0.5s;
+    }
+
+    .control-tab:hover::before, .modern-button:hover::before, .nav-button:hover::before, button[type="submit"]:hover::before {
+      left: 100%;
+    }
+
+    .control-tab.active {
+      background: linear-gradient(45deg, #4158d0, #3fa9f5);
+      box-shadow: 0 4px 15px rgba(63, 169, 245, 0.3);
+    }
+
+    /* Sharp Card Styles */
+    .card-content, .modern-card, .cart-item, .profile-container, .confirmation-container {
+      border-radius: 4px !important;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .card-content:hover, .modern-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(63, 169, 245, 0.3);
+    }
+
+    /* Carousel Arrow Updates */
+    .carousel-arrow {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px !important;
+      background: linear-gradient(45deg, #3fa9f5, #4158d0);
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 0;
+    }
+
+    .carousel-arrow:hover {
+      transform: scale(1.1);
+      box-shadow: 0 5px 15px rgba(63, 169, 245, 0.3);
+    }
+
+    /* Form Input Updates */
+    input, select, textarea {
+      border-radius: 4px !important;
+    }
+
+    /* Navigation Button Updates */
+    .nav-link {
+      position: relative;
+      padding: 8px 16px;
+      color: white;
+      text-decoration: none;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, #3fa9f5, #4158d0);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover::before {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    /* Control Section Button Updates */
+    .control-container .control-tabs {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .control-container .control-tab {
+      min-width: 160px;
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Modern Button Accent Colors */
+    .modern-button.accent {
+      background: linear-gradient(45deg, #4158d0, #3fa9f5);
+    }
+
+    .modern-button.secondary {
+      background: linear-gradient(45deg, #6B7280, #4B5563);
+    }
+
+    /* Quantity Control Button Updates */
+    .quantity-button {
+      background: linear-gradient(45deg, #3fa9f5, #4158d0) !important;
+      border-radius: 4px !important;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .quantity-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(63, 169, 245, 0.2);
+    }
+
+    /* Base button style */
+    .animated-button {
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border-radius: 4px !important;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+    }
+
+    /* Button variations based on section */
+    .button-birds {
+      background: linear-gradient(45deg, #00ffff, #ff1493);
+    }
+
+    .button-topology {
+      background: linear-gradient(45deg, #3fa9f5, #4158d0);
+    }
+
+    .button-rings {
+      background: linear-gradient(45deg, #4158d0, #ff3f81);
+    }
+
+    .button-waves {
+      background: linear-gradient(45deg, #00ffff, #4158d0);
+    }
+
+    .button-dots {
+      background: linear-gradient(45deg, #3fa9f5, #ff3f81);
+    }
+
+    /* Shine effect for all buttons */
+    .animated-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: 0.5s;
+    }
+
+    .animated-button:hover::before {
+      left: 100%;
+    }
+
+    .animated-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Update control tabs */
+    .control-tab {
+      background: linear-gradient(45deg, #4158d0, #ff3f81);
+    }
+
+    .control-tab.active {
+      background: linear-gradient(45deg, #ff3f81, #4158d0);
+    }
+
+    /* Update back button style */
+    .back-button {
+      background: linear-gradient(45deg, #00ffff, #4158d0);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border-radius: 4px !important;
+    }
+
+    .back-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Update carousel arrows */
+    .carousel-arrow {
+      background: linear-gradient(45deg, #00ffff, #4158d0);
+      width: 40px;
+      height: 40px;
+    }
+
+    /* Update navigation buttons */
+    .nav-button {
+      background: linear-gradient(45deg, #00ffff, #ff1493);
+    }
+
+    /* Update form buttons */
+    button[type="submit"] {
+      background: linear-gradient(45deg, #3fa9f5, #4158d0);
+    }
+
+    /* Update quantity buttons */
+    .quantity-button {
+      background: linear-gradient(45deg, #3fa9f5, #ff3f81) !important;
+    }
+
+    /* Add debugging styles */
+    .debug-info {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        z-index: 1000;
+        font-family: monospace;
+    }
+
+    .video-container {
+        position: relative;
+        width: 480px;  /* Made square */
+        height: 480px; /* Made square */
+        margin: 0 auto;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #videoElement {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* This will ensure the video fills the square */
+        transform: scaleX(-1);
+    }
+
+    #canvasOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform: scaleX(-1);
+        pointer-events: none;
+    }
+
+    .gesture-status {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    #errorMessage {
+        color: #ff4444;
+        background: rgba(255, 68, 68, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        text-align: center;
+    }
+
+    .debug-panel {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        z-index: 1000;
+        font-family: monospace;
+        max-width: 400px;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-indicator.active {
+        background-color: #4CAF50;
+    }
+
+    .status-indicator.error {
+        background-color: #f44336;
+    }
+
+    .status-indicator.warning {
+        background-color: #ff9800;
+    }
+
+    .video-container.fullscreen {
+        width: min(100vh, 100vw); /* Makes it square in fullscreen too */
+        height: min(100vh, 100vw);
+        margin: auto;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        background: #000;
+        border-radius: 0;
+    }
+
+    .video-container.fullscreen video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .fullscreen-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .fullscreen-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    .debug-panel.fullscreen {
+        bottom: 40px;
+        left: 40px;
+    }
+
+    .gesture-guide.fullscreen {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        z-index: 10000;
+    }
+    
+    /* Add styles for terms modal */
+    .terms-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
+  </style>
+
+  <!-- Background Effects -->
+  <script>
+    window.initializeVantaEffect = (container, effectType = 'HALO', options = {}) => {
+      if (!window.VANTA) {
+        console.error('VANTA not loaded');
+        return null;
+      }
+
+      if (window.vantaEffect) {
+        window.vantaEffect.destroy();
+      }
+
+      const defaultOptions = {
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        backgroundColor: 0x001220
+      };
+
+      try {
+        const effect = window.VANTA[effectType]({
+          ...defaultOptions,
+          ...options
+        });
+        window.vantaEffect = effect;
+        return effect;
+      } catch (error) {
+        console.error('Failed to initialize VANTA effect:', error);
+        return null;
+      }
+    };
+
+    // Cleanup function
+    window.cleanupVantaEffect = () => {
+      if (window.vantaEffect) {
+        try {
+          window.vantaEffect.destroy();
+        } catch (error) {
+          console.error('Error cleaning up Vanta effect:', error);
+        }
+        window.vantaEffect = null;
+      }
+    };
+  </script>
+
+  <script>
+    // Card background effects configuration
+    window.cardEffects = {
+      control: (container) => VANTA.HALO({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        backgroundColor: 0x001220,
+        baseColor: 0x3fa9f5,
+        xOffset: 0.20,
+        yOffset: 0.20,
+        size: 1.50,
+        amplitudeFactor: 2.00
+      }),
+      shop: (container) => VANTA.WAVES({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        color: 0x3fa9f5,
+        shininess: 35.00,
+        waveHeight: 15.00,
+        waveSpeed: 0.75,
+        zoom: 0.75,
+        backgroundColor: 0x001220
+      }),
+      about: (container) => VANTA.CLOUDS({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        backgroundColor: 0x001220,
+        skyColor: 0x3fa9f5,
+        cloudColor: 0xff3f81,
+        cloudShadowColor: 0x0,
+        speed: 1.00,
+        sunlightIntensity: 2.00
+      }),
+      learn: (container) => VANTA.CELLS({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        color1: 0x3fa9f5,
+        color2: 0xff3f81,
+        size: 2.00,
+        speed: 1.00,
+        backgroundColor: 0x001220
+      })
+    };
+  </script>
+
+  <!-- Database Operations -->
+  <script>
+    const dbOperations = {
+      // User Operations
+      users: {
+        create: async (userData) => {
+          try {
+            const docRef = await usersRef.add({
+              ...userData,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true, id: docRef.id };
+          } catch (error) {
+            console.error('Error creating user:', error);
+            return { success: false, error };
+          }
+        },
+        
+        get: async (userId) => {
+          try {
+            const doc = await usersRef.doc(userId).get();
+            return doc.exists ? { success: true, data: doc.data() } : { success: false, error: 'User not found' };
+          } catch (error) {
+            console.error('Error getting user:', error);
+            return { success: false, error };
+          }
+        },
+        
+        update: async (userId, userData) => {
+          try {
+            await usersRef.doc(userId).update({
+              ...userData,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true };
+          } catch (error) {
+            console.error('Error updating user:', error);
+            return { success: false, error };
+          }
+        }
+      },
+
+      // Device Operations
+      devices: {
+        create: async (deviceData) => {
+          try {
+            const docRef = await devicesRef.add({
+              ...deviceData,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+              isOnline: true
+            });
+            return { success: true, id: docRef.id };
+          } catch (error) {
+            console.error('Error creating device:', error);
+            return { success: false, error };
+          }
+        },
+
+        updateStatus: async (deviceId, status) => {
+          try {
+            await devicesRef.doc(deviceId).update({
+              status,
+              lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Log the status change
+            await deviceLogsRef.add({
+              deviceId,
+              action: status ? 'ON' : 'OFF',
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              controlMethod: 'manual'
+            });
+            
+            return { success: true };
+          } catch (error) {
+            console.error('Error updating device status:', error);
+            return { success: false, error };
+          }
+        },
+
+        getUserDevices: async (userId) => {
+          try {
+            const snapshot = await devicesRef.where('userId', '==', userId).get();
+            const devices = [];
+            snapshot.forEach(doc => devices.push({ id: doc.id, ...doc.data() }));
+            return { success: true, devices };
+          } catch (error) {
+            console.error('Error getting user devices:', error);
+            return { success: false, error };
+          }
+        }
+      },
+
+      // Order Operations
+      orders: {
+        create: async (orderData) => {
+          try {
+            const docRef = await ordersRef.add({
+              ...orderData,
+              orderDate: firebase.firestore.FieldValue.serverTimestamp(),
+              orderStatus: 'pending',
+              paymentStatus: 'pending'
+            });
+            return { success: true, id: docRef.id };
+          } catch (error) {
+            console.error('Error creating order:', error);
+            return { success: false, error };
+          }
+        },
+
+        getUserOrders: async (userId) => {
+          try {
+            const snapshot = await ordersRef
+              .where('userId', '==', userId)
+              .orderBy('orderDate', 'desc')
+              .get();
+            const orders = [];
+            snapshot.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+            return { success: true, orders };
+          } catch (error) {
+            console.error('Error getting user orders:', error);
+            return { success: false, error };
+          }
+        },
+
+        updateStatus: async (orderId, orderStatus) => {
+          try {
+            await ordersRef.doc(orderId).update({
+              orderStatus,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true };
+          } catch (error) {
+            console.error('Error updating order status:', error);
+            return { success: false, error };
+          }
+        }
+      },
+
+      // Product Operations
+      products: {
+        create: async (productData) => {
+          try {
+            const docRef = await productsRef.add({
+              ...productData,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              isActive: true
+            });
+            return { success: true, id: docRef.id };
+          } catch (error) {
+            console.error('Error creating product:', error);
+            return { success: false, error };
+          }
+        },
+
+        getAll: async () => {
+          try {
+            const snapshot = await productsRef.where('isActive', '==', true).get();
+            const products = [];
+            snapshot.forEach(doc => products.push({ id: doc.id, ...doc.data() }));
+            return { success: true, products };
+          } catch (error) {
+            console.error('Error getting products:', error);
+            return { success: false, error };
+          }
+        },
+
+        update: async (productId, productData) => {
+          try {
+            await productsRef.doc(productId).update({
+              ...productData,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true };
+          } catch (error) {
+            console.error('Error updating product:', error);
+            return { success: false, error };
+          }
+        }
+      },
+
+      // Device Logs Operations
+      deviceLogs: {
+        add: async (logData) => {
+          try {
+            const docRef = await deviceLogsRef.add({
+              ...logData,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true, id: docRef.id };
+          } catch (error) {
+            console.error('Error adding device log:', error);
+            return { success: false, error };
+          }
+        },
+
+        getDeviceLogs: async (deviceId) => {
+          try {
+            const snapshot = await deviceLogsRef
+              .where('deviceId', '==', deviceId)
+              .orderBy('timestamp', 'desc')
+              .limit(100)
+              .get();
+            const logs = [];
+            snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+            return { success: true, logs };
+          } catch (error) {
+            console.error('Error getting device logs:', error);
+            return { success: false, error };
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen font-sans">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    console.log('Script starting...');
+
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+        console.log('ErrorBoundary initialized');
+      }
+
+      static getDerivedStateFromError(error) {
+        console.error('Error caught in ErrorBoundary:', error);
+        return { hasError: true, error };
+      }
+
+      componentDidCatch(error, errorInfo) {
+        console.error('React Error Details:', error, errorInfo);
+      }
+
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+                <pre className="text-red-400 text-sm">{this.state.error?.toString()}</pre>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    const LoadingSpinner = () => (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+
+    const App = () => {
+      console.log('App component rendering');
+      
+      // Firebase auth state
+      const [user, setUser] = React.useState(null);
+      const [isLoading, setIsLoading] = React.useState(true);
+      const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+      
+      // App state
+      const [currentPage, setCurrentPage] = React.useState("intro");
+      const [vantaEffect, setVantaEffect] = React.useState(null);
+      const [products, setProducts] = React.useState([]);
+      const [userDevices, setUserDevices] = React.useState([]);
+      
+      // Initialize background container
+      React.useEffect(() => {
+        if (!backgroundRef.current) {
+          const container = document.createElement('div');
+          container.id = 'background-container';
+          container.style.position = 'fixed';
+          container.style.top = '0';
+          container.style.left = '0';
+          container.style.width = '100%';
+          container.style.height = '100%';
+          container.style.zIndex = '0';
+          document.body.insertBefore(container, document.body.firstChild);
+          backgroundRef.current = container;
+        }
+
+        // Initialize default effect
+        if (window.initializeVantaEffect && backgroundRef.current) {
+          const effect = window.initializeVantaEffect(backgroundRef.current, 'HALO', {
+            baseColor: 0x3fa9f5,
+            xOffset: 0.20,
+            yOffset: 0.20,
+            size: 1.50,
+            amplitudeFactor: 2.00
+          });
+          setVantaEffect(effect);
+        }
+
+        return () => {
+          if (window.cleanupVantaEffect) {
+            window.cleanupVantaEffect();
+          }
+        };
+      }, []);
+      const [userOrders, setUserOrders] = React.useState([]);
+      
+      // Initialize background container and Firebase auth listener
+      React.useEffect(() => {
+        // Setup background container
+        const setupBackground = () => {
+          const container = document.getElementById('background-container');
+          if (!container) {
+            const newContainer = document.createElement('div');
+            newContainer.id = 'background-container';
+            newContainer.style.position = 'fixed';
+            newContainer.style.top = '0';
+            newContainer.style.left = '0';
+            newContainer.style.width = '100%';
+            newContainer.style.height = '100%';
+            newContainer.style.zIndex = '0';
+            newContainer.style.pointerEvents = 'none';
+            document.body.insertBefore(newContainer, document.body.firstChild);
+          }
+
+          // Initialize default effect
+          if (window.VANTA) {
+            window.cleanupVantaEffect();
+            const effect = window.VANTA.HALO({
+              el: container || newContainer,
+              mouseControls: true,
+              touchControls: true,
+              gyroControls: false,
+              minHeight: 200.00,
+              minWidth: 200.00,
+              scale: 1.00,
+              scaleMobile: 1.00,
+              backgroundColor: 0x001220,
+              baseColor: 0x3fa9f5,
+              xOffset: 0.20,
+              yOffset: 0.20,
+              size: 1.50,
+              amplitudeFactor: 2.00
+            });
+            window.vantaEffect = effect;
+          }
+        };
+
+        // Setup background first
+        setupBackground();
+
+        // Then initialize Firebase auth
+        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+          setUser(user);
+          setIsLoggedIn(!!user);
+          setIsLoading(false);
+        });
+
+        return () => {
+          window.cleanupVantaEffect();
+          unsubscribe();
+        };
+      }, []);
+
+      // Load products
+      React.useEffect(() => {
+        const loadProducts = async () => {
+          try {
+            const result = await dbOperations.products.getAll();
+            if (result.success) {
+              setProducts(result.products);
+            }
+          } catch (error) {
+            console.error("Error loading products:", error);
+          }
+        };
+        
+        loadProducts();
+      }, []);
+
+      // Load user data when authenticated
+      React.useEffect(() => {
+        const loadUserData = async () => {
+          if (!user) return;
+          
+          try {
+            // Load devices
+            const devicesResult = await dbOperations.devices.getUserDevices(user.uid);
+            if (devicesResult.success) {
+              setUserDevices(devicesResult.devices);
+            }
+
+            // Load orders
+            const ordersResult = await dbOperations.orders.getUserOrders(user.uid);
+            if (ordersResult.success) {
+              setUserOrders(ordersResult.orders);
+            }
+          } catch (error) {
+            console.error("Error loading user data:", error);
+          }
+        };
+        
+        if (user) {
+          loadUserData();
+        }
+      }, [user]);
+
+      // Auth handlers
+      const handleGoogleLogin = async () => {
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          const result = await firebase.auth().signInWithPopup(provider);
+          
+          if (result.additionalUserInfo.isNewUser) {
+            await dbOperations.users.create({
+              uid: result.user.uid,
+              name: result.user.displayName,
+              email: result.user.email,
+              profilePic: result.user.photoURL
+            });
+          }
+          
+          setCurrentPage("home");
+        } catch (error) {
+          console.error("Error during Google login:", error);
+          alert("Login failed. Please try again.");
+        }
+      };
+
+      const handleLogout = async () => {
+        try {
+          await firebase.auth().signOut();
+          setCurrentPage("intro");
+        } catch (error) {
+          console.error("Error during logout:", error);
+        }
+      };
+
+      // Device handlers
+      const handleDeviceControl = async (deviceId, status) => {
+        try {
+          await dbOperations.devices.updateStatus(deviceId, status);
+          // Update local state
+          setUserDevices(devices => 
+            devices.map(device => 
+              device.id === deviceId 
+                ? { ...device, status } 
+                : device
+            )
+          );
+        } catch (error) {
+          console.error("Error controlling device:", error);
+          alert("Failed to control device. Please try again.");
+        }
+      };
+
+      // Order handlers
+      const handleCreateOrder = async (orderData) => {
+        try {
+          if (!user) {
+            alert("Please login to place an order");
+            return;
+          }
+          
+          const result = await dbOperations.orders.create({
+            ...orderData,
+            userId: user.uid
+          });
+          
+          if (result.success) {
+            // Add new order to local state
+            setUserOrders(orders => [result.data, ...orders]);
+            alert("Order placed successfully!");
+            setCurrentPage("orders");
+          }
+        } catch (error) {
+          console.error("Error creating order:", error);
+          alert("Failed to place order. Please try again.");
+        }
+      };
+
+      // State management
+      const [transitionState, setTransitionState] = React.useState({
+        visible: true,
+        direction: "forward",
+        prevPage: null,
+      });
+      const [isTransitioning, setIsTransitioning] = React.useState(false);
+      const backgroundRef = React.useRef(null);
+      
+      // Define section class
+      const sectionClass = "min-h-screen overflow-y-auto py-20 relative z-10";
+      
+      const [carouselIndex, setCarouselIndex] = React.useState(0);
+      const [selectedCardIndex, setSelectedCardIndex] = React.useState(0);
+      const [backgroundImage, setBackgroundImage] = React.useState(null);
+      const [activeTab, setActiveTab] = React.useState("manual");
+      const [tabTransition, setTabTransition] = React.useState({
+        visible: true,
+        direction: "right",
+        prevTab: null,
+      });
+      const [isLightOn, setIsLightOn] = React.useState(false);
+      const [isFanOn, setIsFanOn] = React.useState(false);
+      const [appliance1Name, setAppliance1Name] = React.useState("Light");
+      const [appliance2Name, setAppliance2Name] = React.useState("Fan");
+      const [detectedGesture, setDetectedGesture] = React.useState("No gesture detected");
+      const [trackingMode, setTrackingMode] = React.useState("Palm");
+      const videoRef = React.useRef(null);
+      const canvasRef = React.useRef(null);
+      const [isESP32Connected, setIsESP32Connected] = React.useState(false);
+      const carouselTrackRef = React.useRef(null);
+      const [cartItem, setCartItem] = React.useState(null);
+      const [profileData, setProfileData] = React.useState({
+        name: "John Doe",
+        email: "johndoe@gmail.com",
+        phone: "1234567890",
+        address: "123 Main St, City",
+        profilePic: "https://via.placeholder.com/96",
+        orders: [
+          { id: 1, productName: "Smart Home Controller", orderDate: "2024-03-15", total: 1499 },
+          { id: 2, productName: "Smart Light Bulb", orderDate: "2024-03-10", total: 499 }
+        ]
+      });
+      const [orderHistory, setOrderHistory] = React.useState([]);
+      const [orderConfirmation, setOrderConfirmation] = React.useState(null);
+      const [modalState, setModalState] = React.useState({
+        isOpen: false,
+        title: "",
+        content: ""
+      });
+      const [editMode, setEditMode] = React.useState(false);
+      const [isCartLoading, setIsCartLoading] = React.useState(false);
+      const [imageLoaded, setImageLoaded] = React.useState(false);
+      const [currentBackground, setCurrentBackground] = React.useState(null);
+      
+      const [showTerms, setShowTerms] = React.useState(false);
+      const [googleUserData, setGoogleUserData] = React.useState(null);
+
+      // Background effects configuration
+      const backgroundEffects = {
+        birds: {
+          effect: VANTA.BIRDS,
+          options: {
+            backgroundColor: 0x7f92f,
+            backgroundAlpha: 1,
+            color1: 0xff0000,
+            color2: 0xdfff,
+            colorMode: "varianceGradient",
+            quantity: 5,
+            birdSize: 1,
+            wingSpan: 30,
+            speedLimit: 5,
+            separation: 20,
+            alignment: 20,
+            cohesion: 20
+          }
+        },
+        rings: {
+          effect: VANTA.RINGS,
+          options: {
+            backgroundColor: 0x001220,
+            color: 0x4158d0,
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            backgroundAlpha: 1,
+            color2: 0xff3f81,
+            size: 1.00,
+            spacing: 20.00,
+            rotationSpeed: 0.50
+          }
+        },
+        topology: {
+          effect: VANTA.CLOUDS,
+          options: {
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00
+          }
+        },
+        waves: {
+          effect: VANTA.WAVES,
+          options: {
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x0,
+            shininess: 30.00,
+            waveHeight: 20.00,
+            waveSpeed: 0.75,
+            zoom: 0.65
+          }
+        },
+        dots: {
+          effect: VANTA.DOTS,
+          options: {
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x3fa9f5,
+            color2: 0xff3f81,
+            backgroundColor: 0x001220,
+            size: 3.00,
+            spacing: 35.00,
+            showLines: true
+          }
+        }
+      };
+
+      // Page to background mapping with fallbacks
+      const pageBackgrounds = {
+        intro: "clouds",
+        cards: "rings",
+        control: "birds",
+        details: "waves",
+        about: "waves",
+        learn: "cells",
+        settings: "waves",
+        profile: "dots",
+        cart: "waves",
+        confirmation: "birds"
+      };
+
+      // Card to background mapping with fallbacks
+      const cardBackgrounds = {
+        Shop: "halo",
+        "About Us": "waves",
+        "Learn More": "cells"
+      };
+
+      // Add memoized cart total calculation
+      const cartTotal = React.useMemo(() => {
+        return cartItem ? cartItem.quantity * cartItem.product.price : 0;
+      }, [cartItem]);
+
+      // Add quantity update function with proper state management
+      const updateQuantity = (change) => {
+        if (!cartItem) return;
+        const newQuantity = Math.max(1, cartItem.quantity + change);
+        setCartItem(prev => ({
+          ...prev,
+          quantity: newQuantity
+        }));
+      };
+
+      // Add image loading handler
+      const handleImageLoad = () => {
+        setImageLoaded(true);
+      };
+
+      // Optimize shop card click handler
+      const handleShopCardClick = React.useCallback(() => {
+        setIsCartLoading(true);
+        handleButtonClick(1); // 1 is the index for shop
+        setTimeout(() => setIsCartLoading(false), 500);
+      }, []);
+
+      // Add lazy loading for cart images
+      const CartImage = React.memo(({ src, alt }) => {
+        const [loaded, setLoaded] = React.useState(false);
+        return (
+          <div className="relative w-32 h-32">
+            {!loaded && (
+              <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg"></div>
+            )}
+            <img
+              src={src}
+              alt={alt}
+              className={`w-32 h-32 object-cover transition-opacity duration-300 ${
+                loaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setLoaded(true)}
+            />
+          </div>
+        );
+      });
+
+      // Feature cards data with real images
+      const features = [
+        { 
+          name: "Control", 
+          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150&q=80",
+          background: "bg-gradient-to-b from-blue-200 to-blue-400",
+          details: "Control your smart home devices using manual, gesture, or voice commands.",
+          icon: "fas fa-cog text-xl text-teal-400 mb-1",
+          buttonLabel: "Control",
+          page: "control"
+        },
+        { 
+          name: "Shop", 
+          image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150&q=80",
+          background: "bg-gradient-to-b from-purple-200 to-purple-400",
+          details: "Explore our smart home products.",
+          icon: "fas fa-shopping-cart text-xl text-teal-400 mb-1",
+          buttonLabel: "Shop",
+          page: "details"
+        },
+        { 
+          name: "About Us", 
+          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150&q=80",
+          background: "bg-gradient-to-b from-yellow-200 to-yellow-400",
+          details: "NeoGest brings the future of home automation with gesture-based control, powered by advanced AI technology.",
+          icon: "fas fa-info-circle text-xl text-teal-400 mb-1",
+          buttonLabel: "About",
+          page: "details"
+        },
+        { 
+          name: "Learn More", 
+          image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150&q=80",
+          background: "bg-gradient-to-b from-teal-200 to-teal-400",
+          details: "Discover how NeoGest's gesture and voice control can transform your home into a futuristic living space.",
+          icon: "fas fa-book text-xl text-teal-400 mb-1",
+          buttonLabel: "More",
+          page: "details"
+        },
+      ];
+
+      // Technologies data
+      const technologies = [
+        {
+          name: "ESP32 Development Model",
+          description: "A low-cost, energy-efficient microcontroller with Wi-Fi and Bluetooth, used to control smart home devices.",
+          image: "https://via.placeholder.com/100x100?text=ESP32"
+        },
+        {
+          name: "Two-Channel Relay Module",
+          description: "Controls high-voltage devices like lights and fans, interfaced with ESP32 for smart automation.",
+          image: "https://via.placeholder.com/100x100?text=Relay+Module"
+        },
+        {
+          name: "MediaPipe",
+          description: "Google's framework for hand gesture recognition, enabling real-time gesture control.",
+          image: "https://via.placeholder.com/100x100?text=MediaPipe"
+        },
+        {
+          name: "React",
+          description: "A JavaScript library for building interactive user interfaces, used for the frontend.",
+          image: "https://via.placeholder.com/100x100?text=React"
+        },
+        {
+          name: "Tailwind CSS",
+          description: "A utility-first CSS framework for rapid UI development and responsive design.",
+          image: "https://via.placeholder.com/100x100?text=Tailwind+CSS"
+        },
+        {
+          name: "JavaScript & Babel",
+          description: "Core programming language and transpiler for JSX, enabling dynamic web functionality.",
+          image: "https://via.placeholder.com/100x100?text=JavaScript"
+        },
+      ];
+
+      // Product data
+      const product = {
+        name: "Smart Home Controller",
+        description: "A state-of-the-art smart home controller by NeoGest, designed to manage all your devices with ease using gesture and voice commands.",
+        price: 1499,
+        image: "https://via.placeholder.com/200x200?text=Smart+Controller"
+      };
+
+      // Add script loading check
+      React.useEffect(() => {
+        // Check if required scripts are loaded
+        const requiredScripts = {
+          'three.r134.min.js': false,
+          'vanta.clouds.min.js': false,
+          'p5.min.js': false,
+          'vanta.topology.min.js': false
+        };
+
+        document.querySelectorAll('script').forEach(script => {
+          const src = script.src;
+          Object.keys(requiredScripts).forEach(key => {
+            if (src.includes(key)) {
+              requiredScripts[key] = true;
+            }
+          });
+        });
+
+        // Load missing scripts
+        Object.entries(requiredScripts).forEach(([script, loaded]) => {
+          if (!loaded) {
+            const newScript = document.createElement('script');
+            newScript.src = script.includes('three') ? 
+              'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js' :
+              script.includes('p5') ?
+              'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js' :
+              `https://cdn.jsdelivr.net/npm/vanta@latest/dist/${script}`;
+            document.head.appendChild(newScript);
+          }
+        });
+      }, []);
+
+      // Safe cleanup function for Vanta effect
+      const cleanupVantaEffect = () => {
+        if (vantaEffect) {
+          try {
+            vantaEffect.destroy();
+          } catch (error) {
+            console.warn('Error cleaning up Vanta effect:', error);
+          }
+          setVantaEffect(null);
+        }
+      };
+
+      // Initialize background effect
+      React.useEffect(() => {
+        if (!vantaEffect && window.VANTA && currentPage !== "cards") {
+          const container = document.getElementById('background-container');
+          if (container) {
+            const effect = window.VANTA.CLOUDS({
+              el: container,
+              mouseControls: true,
+              touchControls: true,
+              gyroControls: false,
+              minHeight: 200.00,
+              minWidth: 200.00,
+              scale: 1.00,
+              scaleMobile: 1.00,
+              backgroundColor: 0x001220,
+              skyColor: 0x68b8d7,
+              cloudColor: 0xadc1de,
+              cloudShadowColor: 0x183550,
+              sunColor: 0xff9919,
+              sunGlareColor: 0xff6633,
+              sunlightColor: 0xff9933,
+              speed: 0.6,
+              texturePath: null,
+              zoom: 1.5,
+              cloudWidth: 0.8,
+              cloudHeight: 0.8,
+              backgroundAlpha: 1
+            });
+            setVantaEffect(effect);
+          }
+        }
+
+        return () => {
+          if (window.cleanupVantaEffect) {
+            window.cleanupVantaEffect();
+          }
+        };
+      }, [currentPage]);
+
+      // Handle background change
+      const changeBackground = (effectName) => {
+        if (vantaEffect) vantaEffect.destroy();
+        
+        const effect = backgroundEffects[effectName];
+        if (effect && backgroundRef.current) {
+          setVantaEffect(
+            effect.effect({
+              el: backgroundRef.current,
+              ...effect.options
+            })
+          );
+        }
+      };
+
+      // Fallback effect in case of error
+      const initializeFallbackEffect = () => {
+        if (vantaEffect) vantaEffect.destroy();
+        
+            const fallbackEffect = backgroundEffects.birds.effect({
+          el: backgroundRef.current,
+              ...backgroundEffects.birds.options
+            });
+        
+            setVantaEffect(fallbackEffect);
+      };
+
+      // Error handler for background effects
+      const handleBackgroundError = (error) => {
+        console.error('Background effect error:', error);
+        initializeFallbackEffect();
+      };
+
+      // Cleanup on component unmount
+      React.useEffect(() => {
+        return () => {
+          cleanupVantaEffect();
+        };
+      }, []);
+
+      // Add root element styling
+      React.useEffect(() => {
+        const root = document.getElementById('root');
+        if (root) {
+          Object.assign(root.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            zIndex: '0',
+            overflow: 'hidden'
+          });
+        }
+      }, []);
+
+      // Remove the old background management code
+      React.useEffect(() => {
+        document.body.classList.remove("transition-zoom");
+        setTimeout(() => {
+          document.body.classList.add("transition-zoom");
+        }, 10);
+      }, [carouselIndex, currentPage]);
+
+      // ESP32 connection status
+      React.useEffect(() => {
+        const checkESP32Status = async () => {
+          try {
+            const response = await fetch(`http://${window.ESP32_CONFIG.IP_ADDRESS}${window.ESP32_CONFIG.ENDPOINTS.STATUS}`, {
+              signal: AbortSignal.timeout(5000),
+              mode: 'cors',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            setIsESP32Connected(data.connected);
+          } catch (error) {
+            console.error('ESP32 status check failed:', error);
+            setIsESP32Connected(false);
+          }
+        };
+
+        // Initial check
+        checkESP32Status();
+        
+        // Regular checks every 5 seconds
+        const interval = setInterval(checkESP32Status, 5000);
+        return () => clearInterval(interval);
+      }, []);
+
+      // Carousel position
+      React.useEffect(() => {
+        if (carouselTrackRef.current) {
+          const cardWidth = window.innerWidth <= 640 ? 120 : 150;
+          const gap = 16;
+          const offset = (cardWidth + gap) * carouselIndex;
+          carouselTrackRef.current.style.transform = `translateX(-${offset}px)`;
+        }
+      }, [carouselIndex]);
+
+      // Fix Manual Control visibility on initial load
+      React.useEffect(() => {
+        if (currentPage === "control") {
+          setTabTransition({
+            visible: true,
+            direction: "right",
+            prevTab: null,
+          });
+          setActiveTab("manual");
+        }
+      }, [currentPage]);
+
+      // Page navigation
+      const pageOrder = {
+        intro: 0,
+        cards: 1,
+        control: 2,
+        details: 2,
+        settings: 2,
+        cart: 3,
+        profile: 2,
+        confirmation: 4,
+      };
+
+      // Add login handler
+      const handleLogin = () => {
+        setIsLoggedIn(true);
+        handleGmailLogin();
+      };
+
+      // Modify page navigation to check login
+      const handlePageChange = (page) => {
+        if ((page === "profile" || page === "cart") && !isLoggedIn) {
+          setIsTransitioning(true);
+          setTransitionState({
+            visible: false,
+            direction: "forward",
+            prevPage: currentPage,
+          });
+
+          setTimeout(() => {
+            setCurrentPage("login");
+            setTransitionState({
+              visible: true,
+              direction: "forward",
+              prevPage: currentPage,
+            });
+            setIsTransitioning(false);
+          }, 500);
+          return;
+        }
+
+        setIsTransitioning(true);
+        const currentOrder = pageOrder[currentPage] || 0;
+        const targetOrder = pageOrder[page] || 0;
+        const direction = targetOrder >= currentOrder ? "forward" : "backward";
+        
+        // Handle Vanta effect based on page
+        if (page === "cards") {
+          if (window.mainVantaEffect) {
+            window.mainVantaEffect.destroy();
+          }
+          document.body.style.backgroundColor = "#001220";
+        } else if (currentPage === "cards") {
+          // Restore Vanta effect when leaving cards page
+          const container = document.getElementById('background-container');
+          if (!window.mainVantaEffect && container) {
+            window.mainVantaEffect = VANTA.CLOUDS({
+              el: container,
+              mouseControls: true,
+              touchControls: true,
+              gyroControls: false,
+              minHeight: 200.00,
+              minWidth: 200.00,
+              scale: 1.00,
+              scaleMobile: 1.00,
+              backgroundColor: 0x001220,
+              skyColor: 0x68b8d7,
+              cloudColor: 0xadc1de,
+              cloudShadowColor: 0x183550,
+              sunColor: 0xff9919,
+              sunGlareColor: 0xff6633,
+              sunlightColor: 0xff9933,
+              speed: 0.6,
+              texturePath: null,
+              zoom: 1.5,
+              cloudWidth: 0.8,
+              cloudHeight: 0.8,
+              backgroundAlpha: 1
+            });
+          }
+        }
+        
+        setTransitionState({
+          visible: false,
+          direction: direction,
+          prevPage: currentPage,
+        });
+
+        setTimeout(() => {
+          setCurrentPage(page);
+          setTransitionState({
+            visible: true,
+            direction: direction,
+            prevPage: currentPage,
+          });
+          setIsTransitioning(false);
+        }, 500);
+      };
+
+      const handleHomeClick = (e) => {
+        e.preventDefault();
+        handlePageChange("intro");
+      };
+
+      const handleSettingsClick = (e) => {
+        e.preventDefault();
+        handlePageChange("settings");
+      };
+
+      const handleProfileClick = (e) => {
+        e.preventDefault();
+        setCurrentPage("profile");
+      };
+
+      const handleNext = () => {
+        const newIndex = (carouselIndex + 1) % features.length;
+        setCarouselIndex(newIndex);
+        setSelectedCardIndex(newIndex);
+        setBackgroundImage(features[newIndex].image); // Update background image to the new card's image
+      };
+
+      const handlePrev = () => {
+        const newIndex = (carouselIndex - 1 + features.length) % features.length;
+        setCarouselIndex(newIndex);
+        setSelectedCardIndex(newIndex);
+        setBackgroundImage(features[newIndex].image); // Update background image to the new card's image
+      };
+
+      const handleCardClick = (index) => {
+        setCarouselIndex(index);
+        setSelectedCardIndex(index);
+        
+        // Change Vanta effect based on card index
+        if (window.VANTA) {
+          if (window.vantaEffect) {
+            window.cleanupVantaEffect();
+          }
+          
+          const container = document.getElementById('background-container');
+          if (container) {
+            let effect;
+                          switch(index) {
+                case 0: // Control Card
+                effect = window.VANTA.BIRDS({
+                    el: container,
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    backgroundColor: 0x7f92f,
+                    backgroundAlpha: 1,
+                    color1: 0xff0000,
+                    color2: 0xdfff,
+                    colorMode: "varianceGradient",
+                    quantity: 5,
+                    birdSize: 1,
+                    wingSpan: 30,
+                    speedLimit: 5,
+                    separation: 20,
+                    alignment: 20,
+                                        cohesion: 20,
+                  color1: 0xff0000,
+                  color2: 0xfff,
+                  colorMode: "varianceGradient",
+                  quantity: 5,
+                  birdSize: 1,
+                  wingSpan: 30,
+                  speedLimit: 5,
+                  separation: 20,
+                  alignment: 20,
+                  cohesion: 20
+                });
+                break;
+              case 1: // Shop Card
+                effect = window.VANTA.HALO({
+                  el: container,
+                  mouseControls: true,
+                  touchControls: true,
+                  gyroControls: false,
+                  minHeight: 200.00,
+                  minWidth: 200.00,
+                  scale: 1.00,
+                  scaleMobile: 1.00,
+                  backgroundColor: 0x001220,
+                  baseColor: 0x3fa9f5,
+                  xOffset: 0.20,
+                  yOffset: 0.20,
+                  size: 1.50,
+                  amplitudeFactor: 2.00
+                });
+                break;
+              case 2: // About Us Card
+                effect = window.VANTA.WAVES({
+                  el: container,
+                  mouseControls: true,
+                  touchControls: true,
+                  gyroControls: false,
+                  minHeight: 200.00,
+                  minWidth: 200.00,
+                  scale: 1.00,
+                  scaleMobile: 1.00,
+                  color: 0x3fa9f5,
+                  shininess: 35.00,
+                  waveHeight: 15.00,
+                  waveSpeed: 0.75,
+                  zoom: 0.75,
+                  backgroundColor: 0x001220
+                });
+                break;
+              case 3: // Learn More Card
+                effect = window.VANTA.CELLS({
+                  el: container,
+                  mouseControls: true,
+                  touchControls: true,
+                  gyroControls: false,
+                  minHeight: 200.00,
+                  minWidth: 200.00,
+                  scale: 1.00,
+                  scaleMobile: 1.00,
+                  color1: 0x8c8c,
+                  color2: 0xf2e735,
+                  size: 1.50,
+                  speed: 1.00,
+                  backgroundColor: 0x001220
+                });
+                break;
+            }
+            window.vantaEffect = effect;
+          }
+        }
+      };
+
+      const handleButtonClick = (index) => {
+        setCarouselIndex(index);
+        const targetPage = features[index].page;
+        
+        // Maintain the current Vanta effect when navigating
+        if (window.VANTA && window.vantaEffect) {
+          const currentEffect = window.vantaEffect;
+          setTimeout(() => {
+            // Re-apply the effect after page transition
+            if (currentEffect && currentEffect.options) {
+              const container = document.getElementById('background-container');
+              if (container) {
+                window.cleanupVantaEffect();
+                window.vantaEffect = window.VANTA[currentEffect.options.effectName]({
+                  ...currentEffect.options,
+                  el: container
+                });
+              }
+            }
+          }, 100);
+        }
+        
+        handlePageChange(targetPage);
+      };
+
+      const handleEnterClick = () => {
+        handlePageChange("cards");
+      };
+
+      const handleBackClick = (targetPage) => {
+        handlePageChange(targetPage);
+      };
+
+      // Tab switching
+      const tabOrder = {
+        manual: 0,
+        gesture: 1,
+      };
+
+      const handleTabClick = (tab) => {
+        const currentTabOrder = tabOrder[activeTab] || 0;
+        const targetTabOrder = tabOrder[tab] || 0;
+        const direction = targetTabOrder > currentTabOrder ? "right" : "left";
+        setTabTransition({
+          visible: false,
+          direction: direction,
+          prevTab: activeTab,
+        });
+        setTimeout(() => {
+          setActiveTab(tab);
+          setTabTransition({
+            visible: true,
+            direction: direction,
+            prevTab: activeTab,
+          });
+          if (tab === "gesture") {
+            startGestureRecognition();
+          } else {
+            stopGestureRecognition();
+          }
+        }, 500);
+      };
+
+      // ESP32 commands
+      const sendCommand = async (cmd) => {
+        try {
+          const response = await fetch(`http://${window.ESP32_CONFIG.IP_ADDRESS}${window.ESP32_CONFIG.ENDPOINTS.COMMAND}/${cmd}`, {
+            signal: AbortSignal.timeout(5000),
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.status === 'success') {
+            if (cmd.includes('light')) {
+              setIsLightOn(data.devices.light);
+            }
+            if (cmd.includes('fan')) {
+              setIsFanOn(data.devices.fan);
+            }
+          }
+        } catch (error) {
+          console.error('Command error:', error);
+          // Optionally update UI to show error
+          setIsESP32Connected(false);
+        }
+      };
+
+      // Gesture recognition
+      const startGestureRecognition = async () => {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          if (videoDevices.length === 0) {
+            throw new Error('No video devices found');
+          }
+          const selectedDeviceId = videoDevices[0].deviceId;
+          const videoWidth = window.innerWidth <= 640 || window.innerHeight <= 700 ? 320 : 448;
+          const videoHeight = videoWidth * (3 / 4);
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: selectedDeviceId, width: videoWidth, height: videoHeight }
+          });
+          const videoElement = videoRef.current;
+          const canvasElement = canvasRef.current;
+          const canvasCtx = canvasElement.getContext('2d');
+          videoElement.srcObject = stream;
+          videoElement.onloadedmetadata = () => {
+            videoElement.play();
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+          };
+          const hands = new Hands({
+            locateFile: (file) => `hands-0.4.1675469240/package/${file}`
+          });
+          hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+          });
+          hands.onResults((results) => {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+              const landmarks = results.multiHandLandmarks[0];
+              drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#000000', lineWidth: 1 });
+              drawLandmarks(canvasCtx, landmarks, '#000000');
+              let gesture;
+              if (trackingMode === "Finger") {
+                const fingerCount = countExtendedFingers(landmarks);
+                gesture = `${fingerCount} fingers`;
+                setDetectedGesture(`Detected: ${gesture}`);
+                processFingerGesture(fingerCount);
+              } else {
+                gesture = detectPalmGesture(landmarks);
+                setDetectedGesture(`Detected: ${gesture}`);
+                processPalmGesture(gesture);
+              }
+            } else {
+              setDetectedGesture('No hand detected');
+            }
+            canvasCtx.restore();
+          });
+          await hands.initialize();
+          const camera = new Camera(videoElement, {
+            onFrame: async () => {
+              await hands.send({ image: videoElement });
+            },
+            width: videoWidth,
+            height: videoHeight
+          });
+          await camera.start();
+        } catch (error) {
+          console.error('Hand tracking error:', error);
+          setDetectedGesture('Hand tracking failed');
+        }
+      };
+
+      const getAngle = (p1, p2, p3) => {
+        const v1 = {
+          x: p1.x - p2.x,
+          y: p1.y - p2.y,
+          z: p1.z - p2.z
+        };
+        const v2 = {
+          x: p3.x - p2.x,
+          y: p3.y - p2.y,
+          z: p3.z - p2.z
+        };
+        
+        const dotProduct = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+        const v1Magnitude = Math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+        const v2Magnitude = Math.sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+        
+        const angle = Math.acos(dotProduct / (v1Magnitude * v2Magnitude));
+        return angle * (180 / Math.PI);
+      };
+
+      const countExtendedFingers = (landmarks) => {
+        let count = 0;
+        
+        // Improved thumb detection using angle
+        const thumbCMC = landmarks[1];  // Thumb CMC joint
+        const thumbMCP = landmarks[2];  // Thumb MCP joint
+        const thumbIP = landmarks[3];   // Thumb IP joint
+        const thumbTip = landmarks[4];  // Thumb tip
+        
+        // Check thumb extension using angles
+        const thumbAngle = getAngle(thumbCMC, thumbMCP, thumbTip);
+        if (thumbAngle > 25 && thumbTip.x < thumbMCP.x) {
+          count++;
+        }
+        
+        // Check other fingers using both position and angle
+        const fingerTips = [8, 12, 16, 20];      // Index, Middle, Ring, Pinky tips
+        const fingerPIP = [6, 10, 14, 18];       // PIP joints
+        const fingerMCP = [5, 9, 13, 17];        // MCP joints
+        const fingerDIP = [7, 11, 15, 19];       // DIP joints
+        
+        for (let i = 0; i < 4; i++) {
+          const tip = landmarks[fingerTips[i]];
+          const pip = landmarks[fingerPIP[i]];
+          const mcp = landmarks[fingerMCP[i]];
+          const dip = landmarks[fingerDIP[i]];
+          
+          // Check both vertical position and angle
+          const extendedAngle = getAngle(pip, mcp, tip);
+          const dipAngle = getAngle(tip, dip, pip);
+          
+          // A finger is considered extended if:
+          // 1. The tip is higher than the PIP joint (for vertical position)
+          // 2. The angle at MCP joint indicates extension (> 40 degrees)
+          // 3. The DIP joint is relatively straight (< 60 degrees)
+          if (tip.y < pip.y && extendedAngle > 40 && dipAngle < 60) {
+            count++;
+          }
+        }
+        
+        return count;
+      };
+
+      const processFingerGesture = (fingerCount) => {
+        switch (fingerCount) {
+          case 1:
+            sendCommand('light_on');
+            break;
+          case 2:
+            sendCommand('light_off');
+            break;
+          case 3:
+            sendCommand('fan_on');
+            break;
+          case 4:
+            sendCommand('fan_off');
+            break;
+          default:
+            break;
+        }
+      };
+
+      const detectPalmGesture = (landmarks) => {
+        const getDistance = (point1, point2) => {
+          return Math.sqrt(
+            Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2)
+          );
+        };
+        const wrist = landmarks[0];
+        const thumbTip = landmarks[4];
+        const indexTip = landmarks[8];
+        const middleTip = landmarks[12];
+        const ringTip = landmarks[16];
+        const pinkyTip = landmarks[20];
+        const indexMCP = landmarks[5];
+        const middleMCP = landmarks[9];
+        const fingersExtended = (
+          indexTip.y < indexMCP.y &&
+          middleTip.y < middleMCP.y &&
+          ringTip.y < landmarks[13].y &&
+          pinkyTip.y < landmarks[17].y
+        );
+        const fingersSpread = (
+          getDistance(indexTip, middleTip) > 0.05 &&
+          getDistance(middleTip, ringTip) > 0.05 &&
+          getDistance(ringTip, pinkyTip) > 0.05
+        );
+        if (fingersExtended && fingersSpread) {
+          return "Palm";
+        }
+        const fingersFolded = (
+          indexTip.y > indexMCP.y &&
+          middleTip.y > middleMCP.y &&
+          ringTip.y > landmarks[13].y &&
+          pinkyTip.y > landmarks[17].y
+        );
+        if (fingersFolded) {
+          return "Fist";
+        }
+        const indexAndMiddleExtended = (
+          indexTip.y < indexMCP.y &&
+          middleTip.y < middleMCP.y &&
+          ringTip.y > landmarks[13].y &&
+          pinkyTip.y > landmarks[17].y
+        );
+        const indexMiddleSpread = getDistance(indexTip, middleTip) > 0.05;
+        if (indexAndMiddleExtended && indexMiddleSpread) {
+          return "Victory";
+        }
+        const thumbExtended = thumbTip.y < landmarks[3].y;
+        const otherFingersFolded = (
+          indexTip.y > indexMCP.y &&
+          middleTip.y > middleMCP.y &&
+          ringTip.y > landmarks[13].y &&
+          pinkyTip.y > landmarks[17].y
+        );
+        if (thumbExtended && otherFingersFolded) {
+          return "Thumbs Up";
+        }
+        return "Unknown";
+      };
+
+      const processPalmGesture = (gesture) => {
+        switch (gesture) {
+          case "Palm":
+            sendCommand('light_on');
+            break;
+          case "Fist":
+            sendCommand('light_off');
+            break;
+          case "Victory":
+            sendCommand('fan_on');
+            break;
+          case "Thumbs Up":
+            sendCommand('fan_off');
+            break;
+          default:
+            break;
+        }
+      };
+
+      const stopGestureRecognition = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+          videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+          setDetectedGesture('No hand detected');
+        }
+      };
+
+      // Cart handling
+      const handleAddToCart = () => {
+        setCartItem({
+          product: product,
+          quantity: 1
+        });
+        handlePageChange("cart");
+      };
+
+      // Order submission
+      const handleCartSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.target);
+        const userData = {
+          name: formData.get("name"),
+          email: formData.get("email"),
+          street: formData.get("street"),
+          city: formData.get("city"),
+          state: formData.get("state"),
+          zip: formData.get("zip"),
+          phone: formData.get("phone"),
+          quantity: parseInt(formData.get("quantity")),
+          paymentMethod: formData.get("payment-method"),
+        };
+
+        // Input validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(userData.email)) {
+          alert("Please enter a valid email address.");
+          setIsLoading(false);
+          return;
+        }
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(userData.phone)) {
+          alert("Please enter a valid 10-digit phone number.");
+          setIsLoading(false);
+          return;
+        }
+        if (!userData.street || !userData.city || !userData.state || !userData.zip) {
+          alert("Please fill in all address fields.");
+          setIsLoading(false);
+          return;
+        }
+
+        const total = userData.quantity * product.price;
+        const orderDetails = {
+          productName: product.name,
+          quantity: userData.quantity,
+          total: total,
+          user: userData,
+          paymentMethod: userData.paymentMethod,
+          orderDate: new Date().toISOString(),
+        };
+
+        // Send order to backend
+        try {
+          const response = await fetch('/place_order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderDetails),
+          });
+          const result = await response.json();
+          if (result.status === 'success') {
+            setOrderHistory((prev) => [...prev, orderDetails]);
+            setOrderConfirmation(orderDetails);
+            setCartItem(null);
+            handlePageChange("confirmation");
+            if (userData.paymentMethod === "upi") {
+              const upiLink = `upi://pay?pa=komaltej111@oksbi&pn=NeoGest&am=${total}&cu=INR`;
+              setTimeout(() => {
+                window.location.href = upiLink;
+              }, 3000);
+            }
+          } else {
+            alert("Failed to place order. Please try again.");
+          }
+        } catch (error) {
+          console.error('Order submission error:', error);
+          alert("An error occurred while placing the order.");
+        }
+        setIsLoading(false);
+      };
+
+      // Profile submission
+      const handleProfileSubmit = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+          name: formData.get("name"),
+          email: formData.get("email"),
+          address: formData.get("address"),
+          phone: formData.get("phone")
+        };
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(data.email)) {
+          alert("Please enter a valid email address.");
+          return;
+        }
+        setProfileData(data);
+        alert("Profile updated successfully!");
+      };
+
+      const handleGmailLogin = () => {
+        alert("Simulating Gmail login... (Actual implementation requires OAuth)");
+      };
+
+      const openModal = (title, content) => {
+        setModalState({ isOpen: true, title, content });
+      };
+
+      const closeModal = () => {
+        setModalState({ isOpen: false, title: "", content: "" });
+      };
+
+      const toggleEditForm = () => {
+        setEditMode(!editMode);
+      };
+
+      const handleProfileSubmitLocal = (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const name = formData.get("name");
+        const email = formData.get("email");
+        const phone = formData.get("phone");
+        const address = formData.get("address");
+        const profilePicFile = formData.get("profile-pic");
+
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+          alert("Please enter a valid email address.");
+          return;
+        }
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+          alert("Please enter a valid 10-digit phone number.");
+          return;
+        }
+
+        const updatedProfileData = { name, email, phone, address };
+
+        if (profilePicFile && profilePicFile.size > 0) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            updatedProfileData.profilePic = e.target.result;
+            setProfileData(updatedProfileData);
+          };
+          reader.readAsDataURL(profilePicFile);
+        } else {
+          updatedProfileData.profilePic = profileData.profilePic;
+          setProfileData(updatedProfileData);
+        }
+
+        toggleEditForm();
+        alert("Profile updated successfully!");
+      };
+
+      // Add these functions before the renderPageContent function
+      const showOrders = () => {
+        const content = profileData.orders.length ? (
+          <div className="space-y-6">
+            {profileData.orders.map((order) => (
+              <div key={order.id} className="border-b pb-4">
+                <p className="font-semibold">Order #{order.id}</p>
+                <p>Product: {order.productName}</p>
+                <p>Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+                <p>Total: ₹{order.total}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600">No orders found.</p>
+        );
+        openModal("My Orders", content);
+      };
+
+      const showCustomerCare = () => {
+        const content = (
+          <div>
+            <p className="text-gray-600 mb-4">Contact our support team:</p>
+            <p className="mb-2">
+              <strong>Email:</strong> support@neogest.com
+            </p>
+            <p className="mb-4">
+              <strong>Phone:</strong> +91 9876543210
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); alert("Message sent!"); closeModal(); }}>
+              <div className="mb-4">
+                <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-1">
+                  Message
+                </label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="5"
+                  required
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        );
+        openModal("Customer Care", content);
+      };
+
+      const showInviteFriends = () => {
+        openModal("Invite Friends & Earn", (
+          <div>
+            <p className="text-gray-600 mb-4">Share this referral link with your friends:</p>
+            <input
+              type="text"
+              value="https://neogest.com/refer?code=ABC123"
+              readOnly
+              className="w-full p-2 border border-gray-300 rounded-md mb-4 text-gray-900"
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText("https://neogest.com/refer?code=ABC123");
+                alert("Referral link copied!");
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full"
+            >
+              Copy Link
+            </button>
+          </div>
+        ));
+      };
+
+      const showWallet = () => {
+        openModal("NeoGest Wallet", (
+          <div>
+            <p className="text-gray-600 mb-4">NeoGest Wallet Balance: ₹500</p>
+            <button
+              onClick={() => alert("Add Gift Card functionality not implemented.")}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full"
+            >
+              Add Gift Card
+            </button>
+          </div>
+        ));
+      };
+
+      const showSavedCards = () => {
+        openModal("Saved Cards", 
+          <p className="text-gray-600">No saved cards. Add a card in the NeoGest Wallet section.</p>
+        );
+      };
+
+      const showRewards = () => {
+        openModal("My Rewards", (
+          <div className="space-y-4">
+            <div className="border-b pb-4">
+              <p className="font-semibold">₹50 SuperCash</p>
+              <p>Expires: 2025-06-30</p>
+            </div>
+            <div className="border-b pb-4">
+              <p className="font-semibold">10% Off Coupon</p>
+              <p>Expires: 2025-07-15</p>
+            </div>
+          </div>
+        ));
+      };
+
+      const showAddress = () => {
+        openModal("Address", (
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const address = e.target.address.value;
+            setProfileData({ ...profileData, address });
+            alert("Address updated successfully!");
+            closeModal();
+          }}>
+            <div className="mb-4">
+              <label htmlFor="address-input" className="block text-sm font-medium text-gray-700 mb-1">
+                Address
+              </label>
+              <input
+                type="text"
+                id="address-input"
+                name="address"
+                defaultValue={profileData.address || ""}
+                className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition w-full"
+            >
+              Save Address
+            </button>
+          </form>
+        ));
+      };
+
+      const showNotifications = () => {
+        openModal("Notifications", (
+          <div>
+            <p className="text-gray-600 mb-4">Manage your notification preferences:</p>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-gray-800">Email Notifications</span>
+              <input type="checkbox" defaultChecked className="h-5 w-5 text-blue-500 rounded" />
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-gray-800">SMS Notifications</span>
+              <input type="checkbox" className="h-5 w-5 text-blue-500 rounded" />
+            </div>
+          </div>
+        ));
+      };
+
+      // Page rendering
+      const renderPageContent = () => {
+        switch (currentPage) {
+          case "intro":
+            return (
+              <section className={`${sectionClass} flex items-center justify-center`}>
+                <div className="intro-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+                  <h1 className="text-6xl md:text-7xl font-extrabold text-white mb-8 animate-fade-in glow-text tracking-tight">
+                    Welcome to <span className="bg-gradient-to-r from-teal-400 to-blue-500 text-transparent bg-clip-text">NeoGest</span>
+                  </h1>
+                  <div className="space-y-8 max-w-3xl mx-auto">
+                    <p className="text-2xl text-white/90 mb-6 typewriter leading-relaxed font-light">
+                      Experience the future of smart home control with NeoGest
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                        <i className="fas fa-hand-paper text-4xl text-teal-400 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-white mb-2">Gesture Control</h3>
+                        <p className="text-white/80">Control your home devices with natural hand movements using advanced AI technology.</p>
+                      </div>
+                      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                        <i className="fas fa-microchip text-4xl text-blue-400 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-white mb-2">Smart Integration</h3>
+                        <p className="text-white/80">Seamlessly integrate with your existing smart home devices and IoT ecosystem.</p>
+                      </div>
+                      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                        <i className="fas fa-shield-alt text-4xl text-purple-400 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-white mb-2">Secure & Reliable</h3>
+                        <p className="text-white/80">Built with state-of-the-art security features to protect your smart home network.</p>
+                      </div>
+                      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                        <i className="fas fa-magic text-4xl text-pink-400 mb-4"></i>
+                        <h3 className="text-xl font-semibold text-white mb-2">Intuitive Experience</h3>
+                        <p className="text-white/80">Enjoy a magical, intuitive interface designed for the modern smart home.</p>
+                      </div>
+                  </div>
+                  <button
+                    onClick={handleEnterClick}
+                      className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-300 ease-in-out bg-gradient-to-r from-teal-400 to-blue-500 rounded-full hover:from-blue-500 hover:to-teal-400 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                      <span className="absolute inset-0 w-full h-full rounded-full animate-pulse bg-white/20"></span>
+                      <span className="relative">Enter the Future</span>
+                      <i className="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                  </button>
+                  </div>
+                </div>
+              </section>
+            );
+          case "cards":
+            return (
+              <section className={`${sectionClass} flex items-center justify-center`}>
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"} w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`}>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-12">
+                    <div className="md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left">
+                      <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 bg-gradient-to-r from-teal-400 to-blue-500 text-transparent bg-clip-text">
+                        {features[carouselIndex].name}
+                      </h1>
+                      <p className="text-white/80 text-xl mb-8 leading-relaxed font-light max-w-xl">
+                        {features[carouselIndex].details}
+                      </p>
+                      <div className={`button-transition ${selectedCardIndex !== null ? 'button-visible' : 'button-exit'}`}>
+                        <button 
+                          onClick={() => handleButtonClick(selectedCardIndex)}
+                          className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-300 ease-in-out bg-gradient-to-r from-teal-400 to-blue-500 rounded-full overflow-hidden"
+                        >
+                          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-500 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                          <span className="relative flex items-center">
+                            <i className={`${features[selectedCardIndex].icon} mr-2`}></i>
+                            {features[selectedCardIndex].buttonLabel}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="md:w-1/2 flex justify-center relative">
+                      <div className="carousel-container">
+                        <div 
+                          className="carousel-3d" 
+                          ref={carouselTrackRef}
+                          style={{
+                            transform: isTransitioning ? 'scale(0.98)' : 'scale(1)',
+                            opacity: isTransitioning ? 0.8 : 1,
+                            transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
+                          }}
+                        >
+                          {features.map((feature, index) => {
+                            const isActive = index === carouselIndex;
+                            return (
+                              <div
+                                key={index}
+                                className={`card-container ${isActive ? 'active' : ''} float`}
+                                style={{ 
+                                  animationDelay: `${index * 0.2}s`,
+                                  transform: `translateZ(${isActive ? '20px' : '0'}) scale(${isActive ? '1.05' : '1'})`
+                                }}
+                                onClick={() => handleCardClick(index)}
+                              >
+                                <div className={`card-content ${feature.name.toLowerCase()}`}>
+                                  <div className="relative w-[150px] h-[150px]">
+                                    {!imageLoaded && (
+                                      <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg"></div>
+                                    )}
+                                    <img
+                                      src={feature.image}
+                                      alt={feature.name}
+                                      className={`w-[150px] h-[150px] object-cover mx-auto transition-opacity duration-300 ${
+                                        imageLoaded ? 'opacity-100' : 'opacity-0'
+                                      }`}
+                                      onLoad={handleImageLoad}
+                                    />
+                                  </div>
+                                  <div className="p-3 text-center">
+                                    <i className={feature.icon}></i>
+                                    <h3 className="text-sm font-semibold">{feature.name}</h3>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button onClick={handlePrev} className="carousel-arrow left">
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <button onClick={handleNext} className="carousel-arrow right">
+                          <i className="fas fa-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            );
+          case "details":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                  <h2 className="text-4xl font-bold text-white mb-8 text-center">Feature Details</h2>
+                  <div className="w-full max-w-4xl px-4">
+                    {carouselIndex === 1 ? (
+                      <div className="product-container">
+                        <div className="product-image-container">
+                          <img src={product.image} alt={product.name} className="rotate-3d" />
+                        </div>
+                        <div className="product-info">
+                          <h3 className="text-xl font-semibold">{product.name}</h3>
+                          <p className="text-sm">{product.description}</p>
+                          <p className="text-lg">Price: ₹{product.price}</p>
+                          <button
+                            onClick={handleAddToCart}
+                            className="mt-4 bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition"
+                          >
+                            Add to Cart
+                          </button>
+                        </div>
+                      </div>
+                    ) : carouselIndex === 2 ? (
+                      <div className="flex justify-center items-center w-full">
+                        <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl mx-auto">
+                          <h3 className="text-2xl font-semibold text-teal-800 mb-4 text-center underline-animation">
+                            {features[carouselIndex].name}
+                          </h3>
+                          <p className="text-gray-700 text-center fade-in-text">
+                            NeoGest is a pioneering smart home automation company dedicated to transforming the way you interact with your living space. Our mission is to empower users with seamless control over their devices using cutting-edge gesture and voice recognition technology. Founded in 2023, our team of innovators and engineers has worked tirelessly to create a product that blends advanced AI with user-friendly design. We envision a future where technology enhances everyday life, making it more convenient, efficient, and enjoyable. Join us on this journey to redefine home automation!
+                          </p>
+                        </div>
+                      </div>
+                    ) : carouselIndex === 3 ? (
+                      <div className="flex justify-center items-center w-full">
+                        <div className="learn-more-cards mx-auto">
+                          {technologies.map((tech, index) => (
+                            <div
+                              key={index}
+                              className="learn-more-card float card-hover"
+                              style={{ animationDelay: `${index * 0.2}s` }}
+                            >
+                              <img src={tech.image} alt={tech.name} />
+                              <h4>{tech.name}</h4>
+                              <p>{tech.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl">
+                        <h3 className="text-2xl font-semibold text-teal-800 mb-4 text-center">{features[carouselIndex].name}</h3>
+                        <p className="text-gray-700 text-center">{features[carouselIndex].details}</p>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleBackClick("cards")}
+                    className="back-button animated-button mt-8 mb-12"
+                  >
+                    Back to Cards
+                  </button>
+                </div>
+              </section>
+            );
+          case "control":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                  <div className="control-container">
+                    <div className="control-tabs">
+                      <button
+                        onClick={() => handleTabClick("manual")}
+                        className={`control-tab ${
+                          activeTab === "manual" ? "bg-teal-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        Manual Control
+                      </button>
+                      <button
+                        onClick={() => handleTabClick("gesture")}
+                        className={`control-tab ${
+                          activeTab === "gesture" ? "bg-teal-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        Gesture Control
+                      </button>
+                    </div>
+
+                    <div className="w-full max-w-4xl mx-auto">
+                      {activeTab === "manual" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                              <i className="fas fa-lightbulb mr-2"></i> {appliance1Name} Control
+                            </h3>
+                            <p className="text-gray-600 mb-4 text-center">Control your {appliance1Name.toLowerCase()} with a simple switch.</p>
+                            <div className="flex items-center justify-between w-full max-w-xs">
+                              <span className={`text-lg ${isLightOn ? "text-green-600" : "text-gray-600"}`}>
+                                {isLightOn ? "ON" : "OFF"}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isLightOn}
+                                  onChange={() => sendCommand(isLightOn ? "light_off" : "light_on")}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-teal-600 transition duration-300"></div>
+                                <div className="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-5 transition duration-300"></div>
+                              </label>
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                              <i className="fas fa-fan mr-2"></i> {appliance2Name} Control
+                            </h3>
+                            <p className="text-gray-600 mb-4 text-center">Adjust your {appliance2Name.toLowerCase()} settings with ease.</p>
+                            <div className="flex items-center justify-between w-full max-w-xs">
+                              <span className={`text-lg ${isFanOn ? "text-green-600" : "text-gray-600"}`}>
+                                {isFanOn ? "ON" : "OFF"}
+                              </span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isFanOn}
+                                  onChange={() => sendCommand(isFanOn ? "fan_off" : "fan_on")}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-teal-600 transition duration-300"></div>
+                                <div className="absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 peer-checked:translate-x-5 transition duration-300"></div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {activeTab === "gesture" && (
+                        <div className="flex flex-col items-center space-y-6">
+                          <div className="video-container relative">
+                            <video id="video" ref={videoRef} playsInline className="rounded"></video>
+                            <canvas id="canvas" ref={canvasRef}></canvas>
+                            <button
+                              onClick={() => {
+                                const video = document.getElementById('video');
+                                if (video.requestFullscreen) video.requestFullscreen();
+                                else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+                                else if (video.msRequestFullscreen) video.msRequestFullscreen();
+                              }}
+                              className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white px-3 py-1 text-sm rounded hover:bg-opacity-70"
+                            >
+                              Fullscreen
+                            </button>
+                          </div>
+
+                          <div className="p-2 bg-white rounded-lg shadow-lg w-full max-w-md">
+                            <h3 className="text-base font-semibold text-gray-800 mb-1 text-center">Detected Gesture</h3>
+                            <p className="text-gray-600 text-xs text-center">{detectedGesture}</p>
+                          </div>
+                          <div className="p-2 bg-white rounded-lg shadow-lg w-full max-w-md">
+                            <h3 className="text-base font-semibold text-gray-800 mb-1 text-center">Gesture Guide</h3>
+                            <p className="text-gray-600 text-xs mb-1 text-center">Control your devices with these gestures:</p>
+                            {trackingMode === "Finger" ? (
+                              <div className="grid grid-cols-2 gap-1">
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">1 Finger: Turn on {appliance1Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">2 Fingers: Turn off {appliance1Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">3 Fingers: Turn on {appliance2Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">4 Fingers: Turn off {appliance2Name}</p></div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-1">
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">Palm: Turn on {appliance1Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">Fist: Turn off {appliance1Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">Victory: Turn on {appliance2Name}</p></div>
+                                <div className="p-1 bg-gray-100 rounded-lg"><p className="text-xs font-semibold text-center">Thumbs Up: Turn off {appliance2Name}</p></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleBackClick("cards")}
+                    className="back-button animated-button mt-8 mb-12"
+                  >
+                    Back to Cards
+                  </button>
+                </div>
+              </section>
+            );
+          case "settings":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                  <h2 className="text-4xl font-bold text-white mb-8 text-center">Settings</h2>
+                  <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl">
+                    <h3 className="text-2xl font-semibold text-teal-800 mb-4 text-center">Customize Appliances</h3>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Appliance 1 Name:</label>
+                      <input
+                        type="text"
+                        value={appliance1Name}
+                        onChange={(e) => setAppliance1Name(e.target.value)}
+                        placeholder="Enter Appliance 1 name"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Appliance 2 Name:</label>
+                      <input
+                        type="text"
+                        value={appliance2Name}
+                        onChange={(e) => setAppliance2Name(e.target.value)}
+                        placeholder="Enter Appliance 2 name"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Gesture Tracking Mode:</label>
+                      <select
+                        value={trackingMode}
+                        onChange={(e) => setTrackingMode(e.target.value)}
+                        className="w-full p-2 border rounded-lg text-gray-700"
+                      >
+                        <option value="Palm">Palm Tracking</option>
+                        <option value="Finger">Finger Tracking</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleBackClick("intro")}
+                    className={`back-button animated-button mt-8 mb-12`}
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </section>
+            );
+          case "cart":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                <div className="cart-grid">
+                  <div className="space-y-6">
+                    <h2 className="text-4xl font-bold text-white mb-8 glow-text">Shopping Cart</h2>
+                    {cartItem && (
+                      <div className="cart-item fade-in-scale">
+                        <CartImage src={cartItem.product.image} alt={cartItem.product.name} />
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-semibold text-white mb-2">{cartItem.product.name}</h3>
+                          <p className="text-white/80 text-sm mb-4">{cartItem.product.description}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="quantity-control">
+                              <button 
+                                className="quantity-button" 
+                                onClick={() => updateQuantity(-1)}
+                                disabled={cartItem.quantity <= 1}
+                              >−</button>
+                              <span className="text-white text-lg font-medium">{cartItem.quantity}</span>
+                              <button 
+                                className="quantity-button" 
+                                onClick={() => updateQuantity(1)}
+                              >+</button>
+                            </div>
+                            <p className="text-white text-2xl font-bold">₹{cartTotal}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="modern-card p-8 h-fit slide-up" style={{ animationDelay: '0.2s' }}>
+                    <h3 className="text-2xl font-semibold text-white mb-8">Order Summary</h3>
+                    <form onSubmit={handleCartSubmit} className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="form-group">
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Full Name"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <input
+                            type="email"
+                            name="email"
+                            placeholder="Email (Gmail only)"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <input
+                            type="text"
+                            name="street"
+                            placeholder="Street Address"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <input
+                            type="text"
+                            name="city"
+                            placeholder="City"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                          <input
+                            type="text"
+                            name="state"
+                            placeholder="State"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <input
+                            type="text"
+                            name="zip"
+                            placeholder="ZIP Code"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <input
+                            type="tel"
+                            name="phone"
+                            placeholder="Phone Number"
+                            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition-all duration-300"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 pt-6 border-t border-white/10">
+                        <div className="flex items-center justify-between text-white">
+                          <span className="text-white/80">Subtotal</span>
+                          <span className="font-medium">₹{cartItem ? cartItem.quantity * cartItem.product.price : 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-white">
+                          <span className="text-white/80">Shipping</span>
+                          <span className="font-medium text-green-400">Free</span>
+                        </div>
+                        <div className="pt-4 border-t border-white/10">
+                          <div className="flex items-center justify-between text-white">
+                            <span className="text-xl">Total</span>
+                            <span className="text-2xl font-bold">₹{cartItem ? cartItem.quantity * cartItem.product.price : 0}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 pt-6">
+                        <div className="flex items-center space-x-4 p-4 rounded-lg bg-white/5">
+                          <input type="radio" name="payment-method" value="upi" id="upi" defaultChecked className="w-5 h-5 text-teal-500" />
+                          <label htmlFor="upi" className="text-white flex-1">UPI Payment</label>
+                        </div>
+                        <div className="flex items-center space-x-4 p-4 rounded-lg bg-white/5">
+                          <input type="radio" name="payment-method" value="cod" id="cod" className="w-5 h-5 text-teal-500" />
+                          <label htmlFor="cod" className="text-white flex-1">Cash on Delivery</label>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="modern-button accent w-full py-4 text-lg font-medium"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="spinner mr-3"></div>
+                            Processing...
+                          </div>
+                        ) : (
+                          "Place Order"
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleBackClick("details")}
+                  className="back-button animated-button mt-8 mb-12"
+                >
+                  Back to Shop
+                </button>
+                </div>
+              </section>
+            );
+          case "confirmation":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                  <div className="confirmation-container">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-4">Order Confirmed!</h2>
+                    <p className="text-gray-600 mb-4">
+                      Thank you for your order, {orderConfirmation.user.name}!
+                    </p>
+                    <div className="order-summary">
+                      <p><strong>Product:</strong> {orderConfirmation.productName}</p>
+                      <p><strong>Quantity:</strong> {orderConfirmation.quantity}</p>
+                      <p><strong>Total:</strong> ₹{orderConfirmation.total}</p>
+                      <p><strong>Payment Method:</strong> {orderConfirmation.paymentMethod === "upi" ? "UPI (Redirecting to payment...)" : "Cash on Delivery"}</p>
+                      <p><strong>Shipping Address:</strong></p>
+                      <p>{orderConfirmation.user.street}, {orderConfirmation.user.city}, {orderConfirmation.user.state} - {orderConfirmation.user.zip}</p>
+                      <p><strong>Contact:</strong> {orderConfirmation.user.phone}</p>
+                      <p><strong>Email:</strong> {orderConfirmation.user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleBackClick("intro")}
+                    className={`back-button animated-button mt-8 mb-12`}
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </section>
+            );
+          case "profile":
+            return (
+              <section className="min-h-screen overflow-y-auto py-20 relative z-10">
+                <div className={`content-container ${transitionState.visible ? "content-enter" : "content-exit"}`}>
+                <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden my-8 profile-container">
+                  <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-800">My Account</h2>
+                    <button
+                      onClick={() => handleBackClick("intro")}
+                      className="text-blue-500 hover:text-blue-600 font-medium transition-colors duration-300"
+                    >
+                      Back to Dashboard
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+                    <div className="profile-sidebar lg:col-span-1 bg-white rounded-lg shadow-sm p-6">
+                      {!editMode ? (
+                        <div className="space-y-6">
+                          <div className="relative w-24 h-24 mx-auto">
+                            <img
+                              src={profileData.profilePic}
+                              alt="Profile"
+                              className="w-24 h-24 rounded-full profile-pic object-cover shadow-lg"
+                            />
+                            <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition-colors duration-300">
+                              <i className="fas fa-camera text-white text-sm"></i>
+                            </div>
+                          </div>
+                          <div className="profile-info text-center space-y-2">
+                            <h3 className="text-xl font-semibold text-gray-800">{profileData.name}</h3>
+                            <p className="text-gray-600 flex items-center justify-center gap-2">
+                              <i className="fas fa-envelope text-blue-500"></i>
+                              {profileData.email}
+                            </p>
+                            <p className="text-gray-600 flex items-center justify-center gap-2">
+                              <i className="fas fa-phone text-blue-500"></i>
+                              {profileData.phone}
+                            </p>
+                            <p className="text-gray-600 flex items-center justify-center gap-2">
+                              <i className="fas fa-map-marker-alt text-blue-500"></i>
+                              {profileData.address || "Add your address"}
+                            </p>
+                          </div>
+                          <button
+                            onClick={toggleEditForm}
+                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                          >
+                            <i className="fas fa-edit"></i>
+                            Edit Profile
+                          </button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleProfileSubmitLocal} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Profile Picture
+                            </label>
+                            <input
+                              type="file"
+                              name="profile-pic"
+                              accept="image/*"
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Name
+                            </label>
+                            <input
+                              type="text"
+                              name="name"
+                              defaultValue={profileData.name}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Email
+                            </label>
+                            <input
+                              type="email"
+                              name="email"
+                              defaultValue={profileData.email}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Phone Number
+                            </label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              defaultValue={profileData.phone}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Address
+                            </label>
+                            <input
+                              type="text"
+                              name="address"
+                              defaultValue={profileData.address}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+                          <div className="flex space-x-4">
+                            <button
+                              type="submit"
+                              className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-all duration-300"
+                            >
+                              Save Changes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={toggleEditForm}
+                              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-all duration-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          { icon: "fas fa-box", title: "Orders", subtitle: "View your order history", action: showOrders },
+                          { icon: "fas fa-headset", title: "Customer Care", subtitle: "Get help and support", action: showCustomerCare },
+                          { icon: "fas fa-user-plus", title: "Invite Friends & Earn", subtitle: "₹100 SuperCash per friend", action: showInviteFriends },
+                          { icon: "fas fa-wallet", title: "NeoGest Wallet", subtitle: "Manage rewards and refunds", action: showWallet },
+                          { icon: "fas fa-credit-card", title: "Saved Cards", subtitle: "Manage payment methods", action: showSavedCards },
+                          { icon: "fas fa-gift", title: "My Rewards", subtitle: "View your rewards and offers", action: showRewards },
+                          { icon: "fas fa-map-marker-alt", title: "Address", subtitle: "Manage delivery addresses", action: showAddress },
+                          { icon: "fas fa-bell", title: "Notifications", subtitle: "Manage your preferences", action: showNotifications }
+                        ].map((item, index) => (
+                          <button
+                            key={index}
+                            onClick={item.action}
+                            className="menu-item flex items-start p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <i className={`${item.icon} text-blue-500`}></i>
+                                <span className="font-medium text-gray-800">{item.title}</span>
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">{item.subtitle}</p>
+                            </div>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {modalState.isOpen && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-lg mx-4 transform transition-all duration-300 scale-100">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-semibold text-gray-800">{modalState.title}</h3>
+                        <button
+                          onClick={closeModal}
+                          className="text-gray-500 hover:text-gray-700 text-2xl transition-colors duration-300"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="modal-content">{modalState.content}</div>
+                    </div>
+                  </div>
+                )}
+                </div>
+              </section>
+            );
+          case "login":
+            return (
+              <section className={`${sectionClass} flex items-center justify-center`}>
+                <div className="modern-card p-8 max-w-md w-full mx-auto">
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-white mb-4">Welcome Back</h2>
+                    <p className="text-white/80">Choose your login method</p>
+                  </div>
+                  
+                  {/* Email Login Form */}
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    // Handle email login here
+                  }} className="space-y-4 mb-6">
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Enter your email"
+                        className="w-full bg-white/10 border border-white/20 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-white/40"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-500 to-teal-400 text-white py-3 px-4 rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                      Continue with Email
+                    </button>
+                  </form>
+                  
+                  {/* Divider */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-px bg-white/20"></div>
+                    <span className="text-white/60">or</span>
+                    <div className="flex-1 h-px bg-white/20"></div>
+                  </div>
+                  
+                  {/* Google Login Button */}
+                  <div id="googleButton" className="w-full"></div>
+                  
+                  {/* Back Button */}
+                  <button
+                    onClick={() => handleBackClick("intro")}
+                    className="w-full mt-6 bg-transparent border border-white/20 text-white py-3 px-4 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    Back to Home
+                  </button>
+                </div>
+
+                {/* Terms Modal */}
+                {showTerms && <TermsModal />}
+              </section>
+            );
+          default:
+            return <div>Page not found</div>;
+        }
+      };
+
+      // Initialize Google OAuth
+      React.useEffect(() => {
+        if (currentPage === "login") {
+          google.accounts.id.initialize({
+            client_id: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your actual Google Client ID
+            callback: handleGoogleResponse
+          });
+          
+          google.accounts.id.renderButton(
+            document.getElementById("googleButton"),
+            { theme: "outline", size: "large", width: "100%" }
+          );
+        }
+      }, [currentPage]);
+
+      // Handle Google OAuth response
+      const handleGoogleResponse = (response) => {
+        const token = response.credential;
+        // Decode the JWT token to get user info
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const userData = JSON.parse(jsonPayload);
+        setGoogleUserData(userData);
+        setShowTerms(true);
+      };
+
+      // Handle terms acceptance
+      const handleAcceptTerms = () => {
+        setShowTerms(false);
+        setIsLoggedIn(true);
+        // Here you would typically:
+        // 1. Send the Google token to your backend
+        // 2. Create/Update user in your database
+        // 3. Set up your app's session
+        handlePageChange("intro");
+      };
+
+      // Terms and Conditions Modal
+      const TermsModal = () => (
+        <div className="modal-overlay">
+          <div className="terms-modal">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Terms and Conditions</h2>
+            <div className="text-gray-600 mb-6 space-y-4">
+              <p>Welcome to NeoGest! By using our service, you agree to the following terms:</p>
+              <ol className="list-decimal pl-4 space-y-2">
+                <li>NeoGest will collect and store your basic profile information from Google.</li>
+                <li>We will use your email for account-related communications and notifications.</li>
+                <li>Your data will be processed in accordance with our privacy policy.</li>
+                <li>You can control your smart home devices through our platform.</li>
+                <li>We maintain logs of device activities for security purposes.</li>
+              </ol>
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowTerms(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Decline
+              </button>
+              <button
+                onClick={handleAcceptTerms}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Accept & Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="scroll-container">
+          <div id="background-container" ref={backgroundRef} className="fixed inset-0 z-0"></div>
+          <div className="content-wrapper relative z-10">
+            <header className="flex justify-between items-center fixed top-0 left-0 right-0 z-30 px-6 py-4 nav-container">
+              <div className="text-2xl font-bold text-white">NeoGest</div>
+              <nav className="space-x-4 flex items-center">
+                <a href="#" onClick={handleHomeClick} className="text-white/80 hover:text-white transition-colors nav-link">Home</a>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${isESP32Connected ? "bg-green-900/20 text-green-400 border border-green-400/30" : "bg-red-900/20 text-red-400 border border-red-400/30"}`}>
+                  {isESP32Connected ? "Connected" : "Disconnected"}
+                </span>
+                <a href="#" className="text-white/80 hover:text-white transition-colors nav-link">Contact</a>
+                {isLoggedIn ? (
+                  <>
+                <a href="#" onClick={handleProfileClick} className="text-white/80 hover:text-white transition-colors nav-link">Profile</a>
+                <button onClick={handleSettingsClick} className="text-white/80 hover:text-white transition-colors nav-button">Settings</button>
+                    <button 
+                      onClick={() => {
+                        setIsLoggedIn(false);
+                        handlePageChange("intro");
+                      }} 
+                      className="bg-red-500/20 text-red-400 border border-red-400/30 px-3 py-1 rounded-lg hover:bg-red-500/30 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => handlePageChange("login")} 
+                    className="bg-blue-500/20 text-blue-400 border border-blue-400/30 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors"
+                  >
+                    Login
+                  </button>
+                )}
+              </nav>
+            </header>
+            <main className={`max-w-7xl mx-auto p-6 page-transition animate-gpu ${
+              transitionState.prevPage === null
+                ? "initial"
+                : transitionState.visible
+                ? transitionState.direction === "forward"
+                  ? "slide-in-right"
+                  : "slide-in-left"
+                : transitionState.direction === "forward"
+                ? "slide-out-left"
+                : "slide-out-right"
+            }`}>
+              {renderPageContent()}
+            </main>
+          </div>
+        </div>
+      );
+    };
+
+    try {
+      console.log('Attempting to render app...');
+      const container = document.getElementById("root");
+      console.log('Root container:', container);
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
+      console.log('App rendered successfully');
+    } catch (error) {
+      console.error('Error during app initialization:', error);
+    }
+  </script>
+
+<script>
+  window.addEventListener("message", function(event) {
+    if (event.data === "goHome") {
+      const button = document.createElement('button');
+      button.onclick = () => window.dispatchEvent(new CustomEvent('goHomeFromProfile'));
+      document.body.appendChild(button);
+      button.click();
+      button.remove();
+    }
+  });
+  window.addEventListener("goHomeFromProfile", () => {
+    const rootScope = window.ReactDOM._internalRoot.current.child.stateNode;
+    if (rootScope && rootScope.setCurrentPage) {
+      rootScope.setCurrentPage("intro");
+    }
+  });
+</script>
+
+<script>
+  window.addEventListener('load', function() {
+    console.log('Window loaded');
+    console.log('React available:', typeof React !== 'undefined');
+    console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
+    console.log('Babel available:', typeof Babel !== 'undefined');
+  });
+</script>
+
+</body>
+</html> 
