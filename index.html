@@ -5,49 +5,168 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NeoGest - Smart Home Control</title>
   
-  <!-- Three.js and Vanta.js dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.halo.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.clouds.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.cells.min.js"></script>
+  <style>
+    /* Enhanced animated gradients */
+    .animated-gradient {
+      background: linear-gradient(-45deg, #0A2647, #144272, #205295, #2C74B3);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+      position: relative;
+    }
+
+    .animated-gradient::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      animation: pulse 8s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* Floating particles effect */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float 20s infinite;
+    }
+
+    /* Mesh gradient overlay */
+    .mesh-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(at 40% 20%, rgba(0, 82, 212, 0.2) 0px, transparent 50%),
+        radial-gradient(at 80% 0%, rgba(49, 120, 198, 0.2) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, rgba(100, 149, 237, 0.2) 0px, transparent 50%),
+        radial-gradient(at 80% 50%, rgba(0, 82, 212, 0.2) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(49, 120, 198, 0.2) 0px, transparent 50%),
+        radial-gradient(at 80% 100%, rgba(100, 149, 237, 0.2) 0px, transparent 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Enhanced animations */
+    @keyframes gradient {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.5;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) translateX(0);
+      }
+      25% {
+        transform: translateY(-100px) translateX(50px);
+      }
+      50% {
+        transform: translateY(-50px) translateX(100px);
+      }
+      75% {
+        transform: translateY(-100px) translateX(50px);
+      }
+    }
+
+    /* Enhanced glass effect */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    /* Base styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      overflow: hidden;
+      background-color: #001220;
+    }
+
+    #root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .content-wrapper {
+      position: relative;
+      min-height: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 2;
+    }
+
+    /* Improved performance with hardware acceleration */
+    .scroll-container {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000;
+      will-change: transform;
+    }
+
+    /* Smooth transitions */
+    .content-wrapper {
+      transition: all 0.3s ease-in-out;
+    }
+
+    /* Glass effect for cards */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
   
-  <!-- Initialize Vanta.js -->
+  <!-- App initialization -->
   <script>
     (function() {
       document.addEventListener('DOMContentLoaded', function() {
-
-          const mainContainer = document.getElementById('background-container');
-          if (mainContainer) {
-            if (window.mainVantaEffect) {
-              window.mainVantaEffect.destroy();
-            }
-
-            window.mainVantaEffect = VANTA.CLOUDS({
-              el: mainContainer,
-              mouseControls: true,
-              touchControls: true,
-              gyroControls: false,
-              minHeight: 200.00,
-              minWidth: 200.00,
-              scale: 1.00,
-              scaleMobile: 1.00,
-              backgroundColor: 0x001220,
-              skyColor: 0x68b8d7,
-              cloudColor: 0xadc1de,
-              cloudShadowColor: 0x183550,
-              sunColor: 0xff9919,
-              sunGlareColor: 0xff6633,
-              sunlightColor: 0xff9933,
-              speed: 0.6,
-              texturePath: null,
-              zoom: 1.5,
-              cloudWidth: 0.8,
-              cloudHeight: 0.8,
-              backgroundAlpha: 1
-            });
-          }
+        // Initialize app
         });
     })();
   </script>
@@ -83,14 +202,17 @@
   <!-- Add Lodash -->
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 
+  <!-- Modern CSS animations are used instead of Vanta.js -->
+  
+  
+
   <!-- Update MediaPipe Hands library paths -->
   <script src="hands-0.4.1675469240/package/hands.js"></script>
   <script src="/static/js/camera_utils.js"></script>
   <script src="/static/js/drawing_utils.js"></script>
 
-  <!-- P5.js for Topology effect -->
+  <!-- P5.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.topology.min.js"></script>
 
   <!-- MediaPipe Dependencies (in correct order) -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -110,6 +232,45 @@
 
   <!-- Add Google OAuth Script -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Particles Animation Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create particles container
+      const particlesContainer = document.createElement('div');
+      particlesContainer.className = 'particles';
+      document.body.appendChild(particlesContainer);
+
+      // Create mesh gradient overlay
+      const meshGradient = document.createElement('div');
+      meshGradient.className = 'mesh-gradient';
+      document.body.appendChild(meshGradient);
+
+      // Create particles
+      const numberOfParticles = 50;
+      for (let i = 0; i < numberOfParticles; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // Random size between 2px and 6px
+        const size = Math.random() * 4 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // Random position
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        
+        // Random animation delay
+        particle.style.animationDelay = `${Math.random() * 20}s`;
+        
+        particlesContainer.appendChild(particle);
+      }
+
+      // Add animated gradient to body
+      document.body.classList.add('animated-gradient');
+    });
+  </script>
 
   <!-- Add Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
@@ -162,84 +323,32 @@
       background-color: #001220;
     }
 
-    #background-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      font-family: 'Inter', sans-serif;
-      background-color: #001220 !important;
-      color: white;
-      overflow: hidden;
-    }
-
-    /* Background containers - for Vanta.js */
-    #background-container, #control-background {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 0 !important;
-      pointer-events: none !important;
-      transform: translateZ(0) !important;
-      backface-visibility: hidden !important;
-      perspective: 1000px !important;
-      will-change: transform !important;
-      -webkit-transform-style: preserve-3d !important;
-      transform-style: preserve-3d !important;
-      -webkit-backface-visibility: hidden !important;
-      -moz-backface-visibility: hidden !important;
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-    
-    #control-background {
-      position: absolute !important;
-      z-index: 1 !important;
-    }
-
-    /* Background container */
-    #background-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-    }
-
-    /* Root container - for React app */
+    /* Root container */
     #root {
       position: relative;
-      z-index: 1;
       width: 100%;
       height: 100%;
       overflow: auto;
-      color: white;
-      background: transparent;
     }
 
-    /* Content wrapper - for main content */
+    /* Content wrapper */
     .content-wrapper {
       position: relative;
-      z-index: 1;
       min-height: 100%;
       padding: 20px;
       box-sizing: border-box;
-      pointer-events: auto;
-      background: transparent;
+    }
+
+    /* Card styles */
+    .modern-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     /* Hide scrollbar but keep functionality */
@@ -252,66 +361,42 @@
       display: none !important;
     }
 
-    body {
-      overflow: hidden;
-    }
-
-    .scroll-container {
-      height: 100vh;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
-      position: relative;
-      z-index: 1;
-    }
-
-        .pointer-none {
-        pointer-events: none;
-      }
-
-    /* Content wrapper */
-    .content-wrapper {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      pointer-events: auto;
-      background: transparent !important;
-    }
-
     /* Section styles */
     .section-container {
       min-height: 100vh;
       padding: 80px 20px;
       position: relative;
-      overflow-y: auto;
-      background: transparent !important;
     }
 
-    /* Make sections scrollable */
+    /* Scrollable sections */
     .scrollable-section {
       min-height: 100vh;
       overflow-y: auto;
       padding: 80px 20px;
       position: relative;
-      z-index: 1;
     }
 
     /* Modern card styles */
     .modern-card {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
       position: relative;
-      z-index: 2;
+      z-index: 1;
       overflow: hidden;
     }
 
     .control-card {
       position: relative;
       overflow: hidden;
+      background: linear-gradient(135deg, rgba(63, 169, 245, 0.2), rgba(255, 63, 129, 0.2));
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
 
     .modern-card:hover {
@@ -2059,122 +2144,134 @@
     }
   </style>
 
-  <!-- Background Effects -->
   <script>
-    window.initializeVantaEffect = (container, effectType = 'HALO', options = {}) => {
-      if (!window.VANTA) {
-        console.error('VANTA not loaded');
-        return null;
-      }
-
-      if (window.vantaEffect) {
-        window.vantaEffect.destroy();
-      }
-
-      const defaultOptions = {
-        el: container,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        backgroundColor: 0x001220
-      };
-
-      try {
-        const effect = window.VANTA[effectType]({
-          ...defaultOptions,
-          ...options
-        });
-        window.vantaEffect = effect;
-        return effect;
-      } catch (error) {
-        console.error('Failed to initialize VANTA effect:', error);
-        return null;
-      }
-    };
-
-    // Cleanup function
+    // Global cleanup function for Vanta effects
     window.cleanupVantaEffect = () => {
       if (window.vantaEffect) {
         try {
-          window.vantaEffect.destroy();
+        window.vantaEffect.destroy();
         } catch (error) {
           console.error('Error cleaning up Vanta effect:', error);
         }
         window.vantaEffect = null;
       }
     };
-  </script>
 
-  <script>
-    // Card background effects configuration
+    // Function to apply Vanta effects based on type
+    window.applyVantaEffect = (container, type) => {
+      if (!container || !window.VANTA) return;
+      
+      window.cleanupVantaEffect();
+      
+      switch(type) {
+        case "intro":
+        case "default":
+          window.vantaEffect = window.VANTA.TOPOLOGY({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+            backgroundColor: 0x2222,
+            color: 0x89964e,
+            points: 11,
+            maxDistance: 25.00,
+            spacing: 18.00,
+            showDots: true
+          });
+          break;
+        case "control":
+          window.vantaEffect = window.VANTA.BIRDS({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+            backgroundColor: 0x7192f,
+            backgroundAlpha: 1,
+            color1: 0xff0000,
+            color2: 0xd1ff,
+            colorMode: "varianceGradient",
+            quantity: 5,
+            birdSize: 1,
+            wingSpan: 30,
+            speedLimit: 5,
+            separation: 20,
+            alignment: 20,
+            cohesion: 20
+          });
+          break;
+        case "shop":
+          window.vantaEffect = window.VANTA.TOPOLOGY({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+            backgroundColor: 0x2222,
+            color: 0x89964e,
+            points: 11,
+            maxDistance: 25.00,
+            spacing: 18.00,
+            showDots: true
+          });
+          break;
+        case "about":
+          window.vantaEffect = window.VANTA.WAVES({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+            color: 0x5588,
+            shininess: 30,
+            waveHeight: 15,
+            waveSpeed: 1,
+            zoom: 1
+          });
+          break;
+        case "learn":
+          window.vantaEffect = window.VANTA.DOTS({
+        el: container,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+            backgroundColor: 0x222222,
+            color: 0xff8820,
+            color2: 0xff8820,
+            size: 3,
+            spacing: 35,
+            showLines: true
+          });
+          break;
+        default:
+          container.style.backgroundColor = '#001220';
+          break;
+      }
+    };
+
+    // Simple card styling with solid background
     window.cardEffects = {
-      control: (container) => VANTA.HALO({
-        el: container,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        backgroundColor: 0x001220,
-        baseColor: 0x3fa9f5,
-        xOffset: 0.20,
-        yOffset: 0.20,
-        size: 1.50,
-        amplitudeFactor: 2.00
-      }),
-      shop: (container) => VANTA.WAVES({
-        el: container,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        color: 0x3fa9f5,
-        shininess: 35.00,
-        waveHeight: 15.00,
-        waveSpeed: 0.75,
-        zoom: 0.75,
-        backgroundColor: 0x001220
-      }),
-      about: (container) => VANTA.CLOUDS({
-        el: container,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        backgroundColor: 0x001220,
-        skyColor: 0x3fa9f5,
-        cloudColor: 0xff3f81,
-        cloudShadowColor: 0x0,
-        speed: 1.00,
-        sunlightIntensity: 2.00
-      }),
-      learn: (container) => VANTA.CELLS({
-        el: container,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        color1: 0x3fa9f5,
-        color2: 0xff3f81,
-        size: 2.00,
-        speed: 1.00,
-        backgroundColor: 0x001220
-      })
+      control: () => null,
+      shop: () => null,
+      about: () => null,
+      learn: () => null
     };
   </script>
 
@@ -2454,7 +2551,6 @@
       
       // App state
       const [currentPage, setCurrentPage] = React.useState("intro");
-      const [vantaEffect, setVantaEffect] = React.useState(null);
       const [products, setProducts] = React.useState([]);
       const [userDevices, setUserDevices] = React.useState([]);
       
@@ -2473,16 +2569,9 @@
           backgroundRef.current = container;
         }
 
-        // Initialize default effect
-        if (window.initializeVantaEffect && backgroundRef.current) {
-          const effect = window.initializeVantaEffect(backgroundRef.current, 'HALO', {
-            baseColor: 0x3fa9f5,
-            xOffset: 0.20,
-            yOffset: 0.20,
-            size: 1.50,
-            amplitudeFactor: 2.00
-          });
-          setVantaEffect(effect);
+        // Initialize topology effect
+        if (window.applyVantaEffect && backgroundRef.current) {
+          window.applyVantaEffect(backgroundRef.current, "intro");
         }
 
         return () => {
@@ -2493,51 +2582,9 @@
       }, []);
       const [userOrders, setUserOrders] = React.useState([]);
       
-      // Initialize background container and Firebase auth listener
+      // Initialize Firebase auth listener
       React.useEffect(() => {
-        // Setup background container
-        const setupBackground = () => {
-          const container = document.getElementById('background-container');
-          if (!container) {
-            const newContainer = document.createElement('div');
-            newContainer.id = 'background-container';
-            newContainer.style.position = 'fixed';
-            newContainer.style.top = '0';
-            newContainer.style.left = '0';
-            newContainer.style.width = '100%';
-            newContainer.style.height = '100%';
-            newContainer.style.zIndex = '0';
-            newContainer.style.pointerEvents = 'none';
-            document.body.insertBefore(newContainer, document.body.firstChild);
-          }
-
-          // Initialize default effect
-          if (window.VANTA) {
-            window.cleanupVantaEffect();
-            const effect = window.VANTA.HALO({
-              el: container || newContainer,
-              mouseControls: true,
-              touchControls: true,
-              gyroControls: false,
-              minHeight: 200.00,
-              minWidth: 200.00,
-              scale: 1.00,
-              scaleMobile: 1.00,
-              backgroundColor: 0x001220,
-              baseColor: 0x3fa9f5,
-              xOffset: 0.20,
-              yOffset: 0.20,
-              size: 1.50,
-              amplitudeFactor: 2.00
-            });
-            window.vantaEffect = effect;
-          }
-        };
-
-        // Setup background first
-        setupBackground();
-
-        // Then initialize Firebase auth
+        // Initialize Firebase auth
         const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
           setUser(user);
           setIsLoggedIn(!!user);
@@ -2545,7 +2592,6 @@
         });
 
         return () => {
-          window.cleanupVantaEffect();
           unsubscribe();
         };
       }, []);
@@ -2725,92 +2771,8 @@
       const [showTerms, setShowTerms] = React.useState(false);
       const [googleUserData, setGoogleUserData] = React.useState(null);
 
-      // Background effects configuration
-      const backgroundEffects = {
-        birds: {
-          effect: VANTA.BIRDS,
-          options: {
-            backgroundColor: 0x7f92f,
-            backgroundAlpha: 1,
-            color1: 0xff0000,
-            color2: 0xdfff,
-            colorMode: "varianceGradient",
-            quantity: 5,
-            birdSize: 1,
-            wingSpan: 30,
-            speedLimit: 5,
-            separation: 20,
-            alignment: 20,
-            cohesion: 20
-          }
-        },
-        rings: {
-          effect: VANTA.RINGS,
-          options: {
-            backgroundColor: 0x001220,
-            color: 0x4158d0,
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            backgroundAlpha: 1,
-            color2: 0xff3f81,
-            size: 1.00,
-            spacing: 20.00,
-            rotationSpeed: 0.50
-          }
-        },
-        topology: {
-          effect: VANTA.CLOUDS,
-          options: {
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00
-          }
-        },
-        waves: {
-          effect: VANTA.WAVES,
-          options: {
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            color: 0x0,
-            shininess: 30.00,
-            waveHeight: 20.00,
-            waveSpeed: 0.75,
-            zoom: 0.65
-          }
-        },
-        dots: {
-          effect: VANTA.DOTS,
-          options: {
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            color: 0x3fa9f5,
-            color2: 0xff3f81,
-            backgroundColor: 0x001220,
-            size: 3.00,
-            spacing: 35.00,
-            showLines: true
-          }
-        }
-      };
+      // Background configuration
+      const backgroundEffects = {};
 
       // Page to background mapping with fallbacks
       const pageBackgrounds = {
@@ -2962,57 +2924,29 @@
         image: "https://via.placeholder.com/200x200?text=Smart+Controller"
       };
 
-      // Add script loading check
+      // Load P5.js if needed
       React.useEffect(() => {
-        // Check if required scripts are loaded
-        const requiredScripts = {
-          'three.r134.min.js': false,
-          'vanta.clouds.min.js': false,
-          'p5.min.js': false,
-          'vanta.topology.min.js': false
-        };
-
-        document.querySelectorAll('script').forEach(script => {
-          const src = script.src;
-          Object.keys(requiredScripts).forEach(key => {
-            if (src.includes(key)) {
-              requiredScripts[key] = true;
-            }
-          });
-        });
-
-        // Load missing scripts
-        Object.entries(requiredScripts).forEach(([script, loaded]) => {
-          if (!loaded) {
+        if (!document.querySelector('script[src*="p5.min.js"]')) {
             const newScript = document.createElement('script');
-            newScript.src = script.includes('three') ? 
-              'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js' :
-              script.includes('p5') ?
-              'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js' :
-              `https://cdn.jsdelivr.net/npm/vanta@latest/dist/${script}`;
+          newScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js';
             document.head.appendChild(newScript);
           }
-        });
       }, []);
 
-      // Safe cleanup function for Vanta effect
-      const cleanupVantaEffect = () => {
-        if (vantaEffect) {
-          try {
-            vantaEffect.destroy();
-          } catch (error) {
-            console.warn('Error cleaning up Vanta effect:', error);
-          }
-          setVantaEffect(null);
-        }
-      };
 
-      // Initialize background effect
+
+      // Page effect initialization
       React.useEffect(() => {
-        if (!vantaEffect && window.VANTA && currentPage !== "cards") {
           const container = document.getElementById('background-container');
-          if (container) {
-            const effect = window.VANTA.CLOUDS({
+        if (!container) return;
+
+        // Clean up any existing effect
+        cleanupVantaEffect();
+
+        if (window.VANTA) {
+          // Control page and control card effect
+          if (currentPage === "control" || (currentPage === "cards" && carouselIndex === 0)) {
+            window.vantaEffect = window.VANTA.BIRDS({
               el: container,
               mouseControls: true,
               touchControls: true,
@@ -3021,68 +2955,34 @@
               minWidth: 200.00,
               scale: 1.00,
               scaleMobile: 1.00,
-              backgroundColor: 0x001220,
-              skyColor: 0x68b8d7,
-              cloudColor: 0xadc1de,
-              cloudShadowColor: 0x183550,
-              sunColor: 0xff9919,
-              sunGlareColor: 0xff6633,
-              sunlightColor: 0xff9933,
-              speed: 0.6,
-              texturePath: null,
-              zoom: 1.5,
-              cloudWidth: 0.8,
-              cloudHeight: 0.8,
-              backgroundAlpha: 1
+              backgroundColor: 0x7192f,
+              backgroundAlpha: 1,
+              color1: 0xff0000,
+              color2: 0xd1ff,
+              colorMode: "varianceGradient",
+              quantity: 5,
+              birdSize: 1,
+              wingSpan: 30,
+              speedLimit: 5,
+              separation: 20,
+              alignment: 20,
+              cohesion: 20
             });
-            setVantaEffect(effect);
+          }
+          // Shop-related pages and shop card effect
+          // Apply modern gradient background based on current page
+          if (currentPage === "intro") {
+            container.className = "animated-gradient";
+          } else {
+            container.className = "default-gradient";
           }
         }
-
-        return () => {
-          if (window.cleanupVantaEffect) {
-            window.cleanupVantaEffect();
-          }
-        };
-      }, [currentPage]);
-
-      // Handle background change
-      const changeBackground = (effectName) => {
-        if (vantaEffect) vantaEffect.destroy();
-        
-        const effect = backgroundEffects[effectName];
-        if (effect && backgroundRef.current) {
-          setVantaEffect(
-            effect.effect({
-              el: backgroundRef.current,
-              ...effect.options
-            })
-          );
-        }
-      };
-
-      // Fallback effect in case of error
-      const initializeFallbackEffect = () => {
-        if (vantaEffect) vantaEffect.destroy();
-        
-            const fallbackEffect = backgroundEffects.birds.effect({
-          el: backgroundRef.current,
-              ...backgroundEffects.birds.options
-            });
-        
-            setVantaEffect(fallbackEffect);
-      };
-
-      // Error handler for background effects
-      const handleBackgroundError = (error) => {
-        console.error('Background effect error:', error);
-        initializeFallbackEffect();
-      };
+      }, [currentPage, carouselIndex]);
 
       // Cleanup on component unmount
       React.useEffect(() => {
         return () => {
-          cleanupVantaEffect();
+          window.cleanupVantaEffect();
         };
       }, []);
 
@@ -3210,41 +3110,7 @@
         const targetOrder = pageOrder[page] || 0;
         const direction = targetOrder >= currentOrder ? "forward" : "backward";
         
-        // Handle Vanta effect based on page
-        if (page === "cards") {
-          if (window.mainVantaEffect) {
-            window.mainVantaEffect.destroy();
-          }
-          document.body.style.backgroundColor = "#001220";
-        } else if (currentPage === "cards") {
-          // Restore Vanta effect when leaving cards page
-          const container = document.getElementById('background-container');
-          if (!window.mainVantaEffect && container) {
-            window.mainVantaEffect = VANTA.CLOUDS({
-              el: container,
-              mouseControls: true,
-              touchControls: true,
-              gyroControls: false,
-              minHeight: 200.00,
-              minWidth: 200.00,
-              scale: 1.00,
-              scaleMobile: 1.00,
-              backgroundColor: 0x001220,
-              skyColor: 0x68b8d7,
-              cloudColor: 0xadc1de,
-              cloudShadowColor: 0x183550,
-              sunColor: 0xff9919,
-              sunGlareColor: 0xff6633,
-              sunlightColor: 0xff9933,
-              speed: 0.6,
-              texturePath: null,
-              zoom: 1.5,
-              cloudWidth: 0.8,
-              cloudHeight: 0.8,
-              backgroundAlpha: 1
-            });
-          }
-        }
+        // Simple page transition
         
         setTransitionState({
           visible: false,
@@ -3260,6 +3126,26 @@
             prevPage: currentPage,
           });
           setIsTransitioning(false);
+
+          // Apply appropriate Vanta effect based on page and card selection
+          const container = document.getElementById('background-container');
+          if (container) {
+            if (page === "cards") {
+              // For cards page, use effect based on selected card
+              const effectTypes = ["control", "shop", "about", "learn"];
+              window.applyVantaEffect(container, effectTypes[carouselIndex]);
+            } else if (page === "control") {
+              window.applyVantaEffect(container, "control");
+            } else if (page === "shop") {
+              window.applyVantaEffect(container, "shop");
+            } else if (page === "about") {
+              window.applyVantaEffect(container, "about");
+            } else if (page === "learn") {
+              window.applyVantaEffect(container, "learn");
+            } else {
+              window.applyVantaEffect(container, "default");
+            }
+          }
         }, 500);
       };
 
@@ -3297,129 +3183,16 @@
         setSelectedCardIndex(index);
         
         // Change Vanta effect based on card index
-        if (window.VANTA) {
-          if (window.vantaEffect) {
-            window.cleanupVantaEffect();
-          }
-          
           const container = document.getElementById('background-container');
           if (container) {
-            let effect;
-                          switch(index) {
-                case 0: // Control Card
-                effect = window.VANTA.BIRDS({
-                    el: container,
-                    mouseControls: true,
-                    touchControls: true,
-                    gyroControls: false,
-                    minHeight: 200.00,
-                    minWidth: 200.00,
-                    scale: 1.00,
-                    scaleMobile: 1.00,
-                    backgroundColor: 0x7f92f,
-                    backgroundAlpha: 1,
-                    color1: 0xff0000,
-                    color2: 0xdfff,
-                    colorMode: "varianceGradient",
-                    quantity: 5,
-                    birdSize: 1,
-                    wingSpan: 30,
-                    speedLimit: 5,
-                    separation: 20,
-                    alignment: 20,
-                                        cohesion: 20,
-                  color1: 0xff0000,
-                  color2: 0xfff,
-                  colorMode: "varianceGradient",
-                  quantity: 5,
-                  birdSize: 1,
-                  wingSpan: 30,
-                  speedLimit: 5,
-                  separation: 20,
-                  alignment: 20,
-                  cohesion: 20
-                });
-                break;
-              case 1: // Shop Card
-                effect = window.VANTA.HALO({
-                  el: container,
-                  mouseControls: true,
-                  touchControls: true,
-                  gyroControls: false,
-                  minHeight: 200.00,
-                  minWidth: 200.00,
-                  scale: 1.00,
-                  scaleMobile: 1.00,
-                  backgroundColor: 0x001220,
-                  baseColor: 0x3fa9f5,
-                  xOffset: 0.20,
-                  yOffset: 0.20,
-                  size: 1.50,
-                  amplitudeFactor: 2.00
-                });
-                break;
-              case 2: // About Us Card
-                effect = window.VANTA.WAVES({
-                  el: container,
-                  mouseControls: true,
-                  touchControls: true,
-                  gyroControls: false,
-                  minHeight: 200.00,
-                  minWidth: 200.00,
-                  scale: 1.00,
-                  scaleMobile: 1.00,
-                  color: 0x3fa9f5,
-                  shininess: 35.00,
-                  waveHeight: 15.00,
-                  waveSpeed: 0.75,
-                  zoom: 0.75,
-                  backgroundColor: 0x001220
-                });
-                break;
-              case 3: // Learn More Card
-                effect = window.VANTA.CELLS({
-                  el: container,
-                  mouseControls: true,
-                  touchControls: true,
-                  gyroControls: false,
-                  minHeight: 200.00,
-                  minWidth: 200.00,
-                  scale: 1.00,
-                  scaleMobile: 1.00,
-                  color1: 0x8c8c,
-                  color2: 0xf2e735,
-                  size: 1.50,
-                  speed: 1.00,
-                  backgroundColor: 0x001220
-                });
-                break;
-            }
-            window.vantaEffect = effect;
-          }
+          const effectTypes = ["control", "shop", "about", "learn"];
+          window.applyVantaEffect(container, effectTypes[index]);
         }
       };
 
       const handleButtonClick = (index) => {
         setCarouselIndex(index);
         const targetPage = features[index].page;
-        
-        // Maintain the current Vanta effect when navigating
-        if (window.VANTA && window.vantaEffect) {
-          const currentEffect = window.vantaEffect;
-          setTimeout(() => {
-            // Re-apply the effect after page transition
-            if (currentEffect && currentEffect.options) {
-              const container = document.getElementById('background-container');
-              if (container) {
-                window.cleanupVantaEffect();
-                window.vantaEffect = window.VANTA[currentEffect.options.effectName]({
-                  ...currentEffect.options,
-                  el: container
-                });
-              }
-            }
-          }, 100);
-        }
         
         handlePageChange(targetPage);
       };
