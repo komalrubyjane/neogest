@@ -5,6 +5,8 @@ const connectDB = require('./config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const mqtt = require('mqtt');
+const axios = require('axios');
 const { protect } = require('./middleware/auth');
 const User = require('./models/User');
 
@@ -24,6 +26,31 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'neogestnoreply@gmail.com',
         pass: process.env.EMAIL_APP_PASSWORD
+    }
+});
+
+// MQTT Configuration
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com');
+const ESP32_IP = '192.168.176.134';  // Your ESP32's IP address
+
+// MQTT Topics
+const TOPICS = {
+    LIGHT: 'neogest/light',
+    FAN: 'neogest/fan',
+    STATUS: 'neogest/status'
+};
+
+// MQTT Connection handling
+mqttClient.on('connect', () => {
+    console.log('Connected to MQTT broker');
+    mqttClient.subscribe(TOPICS.STATUS);
+});
+
+mqttClient.on('message', (topic, message) => {
+    if (topic === TOPICS.STATUS) {
+        // Broadcast status to all connected clients
+        // You can implement WebSocket here if needed
+        console.log('Device status:', message.toString());
     }
 });
 
@@ -229,6 +256,59 @@ app.post('/api/profile/upload-photo', protect, async (req, res) => {
             message: 'Profile picture updated successfully',
             profilePic: user.profilePic
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ESP32 Control Routes
+app.post('/api/device/control', protect, async (req, res) => {
+    try {
+        const { device, action } = req.body;
+        
+        if (!['light', 'fan'].includes(device) || !['ON', 'OFF'].includes(action)) {
+            return res.status(400).json({ message: 'Invalid device or action' });
+        }
+
+        const topic = device === 'light' ? TOPICS.LIGHT : TOPICS.FAN;
+        
+        // Publish to MQTT
+        mqttClient.publish(topic, action);
+        
+        // Also send HTTP request to ESP32 for redundancy
+        try {
+            await axios.post(`http://${ESP32_IP}/control`, {
+                device,
+                action
+            });
+        } catch (error) {
+            console.error('HTTP request to ESP32 failed:', error.message);
+            // Continue anyway since MQTT might have worked
+        }
+
+        res.json({ message: `${device} turned ${action.toLowerCase()}` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+app.get('/api/device/status', protect, async (req, res) => {
+    try {
+        // Try to get status from ESP32 directly
+        try {
+            const response = await axios.get(`http://${ESP32_IP}/status`);
+            return res.json(response.data);
+        } catch (error) {
+            console.error('Failed to get status from ESP32:', error.message);
+            // If direct request fails, return last known status from MQTT
+            // You might want to implement a status cache here
+            return res.status(503).json({ 
+                message: 'Device unreachable',
+                error: 'ESP32 not responding'
+            });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
