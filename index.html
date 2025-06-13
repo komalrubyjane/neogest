@@ -8,7 +8,7 @@
   <style>
     /* Enhanced animated gradients */
     .animated-gradient {
-      background: linear-gradient(-45deg, #0A2647, #144272, #205295, #2C74B3);
+      background: linear-gradient(-45deg, #FF6B6B, #4ECDC4, #45B7D1, #96C93D);
       background-size: 400% 400%;
       animation: gradient 15s ease infinite;
       position: relative;
@@ -21,7 +21,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
       animation: pulse 8s ease-in-out infinite;
       pointer-events: none;
     }
@@ -53,12 +53,12 @@
       width: 100%;
       height: 100%;
       background-image: 
-        radial-gradient(at 40% 20%, rgba(0, 82, 212, 0.2) 0px, transparent 50%),
-        radial-gradient(at 80% 0%, rgba(49, 120, 198, 0.2) 0px, transparent 50%),
-        radial-gradient(at 0% 50%, rgba(100, 149, 237, 0.2) 0px, transparent 50%),
-        radial-gradient(at 80% 50%, rgba(0, 82, 212, 0.2) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(49, 120, 198, 0.2) 0px, transparent 50%),
-        radial-gradient(at 80% 100%, rgba(100, 149, 237, 0.2) 0px, transparent 50%);
+        radial-gradient(at 40% 20%, rgba(255, 107, 107, 0.3) 0px, transparent 50%),
+        radial-gradient(at 80% 0%, rgba(78, 205, 196, 0.3) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, rgba(150, 201, 61, 0.3) 0px, transparent 50%),
+        radial-gradient(at 80% 50%, rgba(69, 183, 209, 0.3) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(255, 107, 107, 0.3) 0px, transparent 50%),
+        radial-gradient(at 80% 100%, rgba(78, 205, 196, 0.3) 0px, transparent 50%);
       pointer-events: none;
       z-index: 1;
     }
@@ -104,13 +104,13 @@
 
     /* Enhanced glass effect */
     .glass-effect {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.1),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12);
     }
 
     /* Base styles */
@@ -122,7 +122,7 @@
       font-family: 'Inter', sans-serif;
       color: white;
       overflow: hidden;
-      background-color: #001220;
+      background-color: #1a1a1a;
     }
 
     #root {
@@ -184,12 +184,11 @@
   <!-- ESP32 Configuration -->
   <script>
     window.ESP32_CONFIG = {
-      IP_ADDRESS: localStorage.getItem('esp32IpAddress') || '192.168.4.1',
-      ENDPOINTS: {
-        STATUS: '/status',
-        HEALTH: '/health',
-        COMMAND: '/command'
-      }
+        IP_ADDRESS: '192.168.176.134',  // Updated ESP32 IP
+        ENDPOINTS: {
+            STATUS: '/api/device/status',
+            CONTROL: '/api/device/control'
+        }
     };
   </script>
   
@@ -320,7 +319,7 @@
       font-family: 'Inter', sans-serif;
       color: white;
       overflow: hidden;
-      background-color: #001220;
+      background-color: #1a1a1a;
     }
 
     /* Root container */
@@ -2490,6 +2489,100 @@
         }
       }
     };
+  </script>
+
+  <!-- Add MQTT Client -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+
+  <script>
+    // MQTT Client setup
+    const mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8000, "web_" + Math.random().toString(16).substr(2, 8));
+    
+    mqttClient.onMessageArrived = function(message) {
+        if (message.destinationName === "neogest/status") {
+            const status = JSON.parse(message.payloadString);
+            updateDeviceStatus(status);
+        }
+    };
+
+    mqttClient.connect({
+        onSuccess: function() {
+            console.log("Connected to MQTT broker");
+            mqttClient.subscribe("neogest/status");
+            setIsESP32Connected(true);
+        },
+        onFailure: function(error) {
+            console.error("MQTT connection failed:", error);
+            setIsESP32Connected(false);
+        }
+    });
+
+    // Update the sendCommand function
+    const sendCommand = async (cmd) => {
+        try {
+            const [device, action] = cmd.split('_');
+            const response = await fetch(window.ESP32_CONFIG.ENDPOINTS.CONTROL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token
+                },
+                body: JSON.stringify({
+                    device,
+                    action: action.toUpperCase()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Command response:', data);
+
+            // Update local state
+            if (device === 'light') {
+                setIsLightOn(action === 'on');
+            }
+            if (device === 'fan') {
+                setIsFanOn(action === 'on');
+            }
+        } catch (error) {
+            console.error('Command error:', error);
+            setIsESP32Connected(false);
+        }
+    };
+
+    // Add function to update device status
+    const updateDeviceStatus = (status) => {
+        setIsLightOn(status.light);
+        setIsFanOn(status.fan);
+        setIsESP32Connected(status.connected);
+    };
+
+    // Add periodic status check
+    const checkDeviceStatus = async () => {
+        try {
+            const response = await fetch(window.ESP32_CONFIG.ENDPOINTS.STATUS, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token
+                }
+            });
+            
+            if (response.ok) {
+                const status = await response.json();
+                updateDeviceStatus(status);
+            } else {
+                setIsESP32Connected(false);
+            }
+        } catch (error) {
+            console.error('Status check failed:', error);
+            setIsESP32Connected(false);
+        }
+    };
+
+    // Check status every 5 seconds
+    setInterval(checkDeviceStatus, 5000);
   </script>
 </head>
 <body class="min-h-screen font-sans">
