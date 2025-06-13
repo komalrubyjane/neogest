@@ -2521,32 +2521,19 @@
     const sendCommand = async (cmd) => {
         try {
             const [device, action] = cmd.split('_');
-            const response = await fetch(window.ESP32_CONFIG.ENDPOINTS.CONTROL, {
+            const response = await fetch('/api/device/control', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token if needed
                 },
-                body: JSON.stringify({
-                    device,
-                    action: action.toUpperCase()
-                })
+                body: JSON.stringify({ device, action: action.toUpperCase() })
             });
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const data = await response.json();
-            console.log('Command response:', data);
-
-            // Update local state
-            if (device === 'light') {
-                setIsLightOn(action === 'on');
-            }
-            if (device === 'fan') {
-                setIsFanOn(action === 'on');
-            }
+            // Optionally update UI or show a toast
         } catch (error) {
             console.error('Command error:', error);
             setIsESP32Connected(false);
@@ -2583,6 +2570,34 @@
 
     // Check status every 5 seconds
     setInterval(checkDeviceStatus, 5000);
+
+    // Poll device status from backend API
+    const pollDeviceStatus = async () => {
+      try {
+        const response = await fetch('/api/device/status', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token if needed
+          }
+        });
+        if (response.ok) {
+          const status = await response.json();
+          setIsLightOn(status.light);
+          setIsFanOn(status.fan);
+          setIsESP32Connected(status.connected);
+        } else {
+          setIsESP32Connected(false);
+        }
+      } catch (error) {
+        setIsESP32Connected(false);
+      }
+    };
+
+    // Start polling every 5 seconds
+    React.useEffect(() => {
+      pollDeviceStatus();
+      const interval = setInterval(pollDeviceStatus, 5000);
+      return () => clearInterval(interval);
+    }, []);
   </script>
 </head>
 <body class="min-h-screen font-sans">
