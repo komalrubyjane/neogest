@@ -52,6 +52,7 @@ mqttClient.on('connect', () => {
 });
 
 mqttClient.on('message', (topic, message) => {
+    console.log('MQTT message:', topic, message.toString()); // Debug log
     if (topic === TOPICS.STATUS) {
         try {
             lastStatus = JSON.parse(message.toString());
