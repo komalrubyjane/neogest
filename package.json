@@ -1,7 +1,7 @@
 {
   "name": "neogest",
   "version": "1.0.0",
-  "description": "NeoGest Application with MongoDB",
+  "description": "NeoGest Application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,10 +13,10 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.3",
+    "mqtt": "^4.3.7",
     "nodemailer": "^6.9.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
   }
-} 
+}
