@@ -2492,86 +2492,9 @@
   </script>
 
   <!-- Add MQTT Client -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-
+ 
   <script>
-    // MQTT Client setup
-    const mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8000, "web_" + Math.random().toString(16).substr(2, 8));
-    
-    mqttClient.onMessageArrived = function(message) {
-        if (message.destinationName === "neogest/status") {
-            const status = JSON.parse(message.payloadString);
-            updateDeviceStatus(status);
-        }
-    };
-
-    mqttClient.connect({
-        onSuccess: function() {
-            console.log("Connected to MQTT broker");
-            mqttClient.subscribe("neogest/status");
-            setIsESP32Connected(true);
-        },
-        onFailure: function(error) {
-            console.error("MQTT connection failed:", error);
-            setIsESP32Connected(false);
-        }
-    });
-
-    // Update the sendCommand function
-    const sendCommand = async (cmd) => {
-        try {
-            const [device, action] = cmd.split('_');
-            const response = await fetch('/api/device/control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token if needed
-                },
-                body: JSON.stringify({ device, action: action.toUpperCase() })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            // Optionally update UI or show a toast
-        } catch (error) {
-            console.error('Command error:', error);
-            setIsESP32Connected(false);
-        }
-    };
-
-    // Add function to update device status
-    const updateDeviceStatus = (status) => {
-        setIsLightOn(status.light);
-        setIsFanOn(status.fan);
-        setIsESP32Connected(status.connected);
-    };
-
-    // Add periodic status check
-    const checkDeviceStatus = async () => {
-        try {
-            const response = await fetch(window.ESP32_CONFIG.ENDPOINTS.STATUS, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token
-                }
-            });
-            
-            if (response.ok) {
-                const status = await response.json();
-                updateDeviceStatus(status);
-            } else {
-                setIsESP32Connected(false);
-            }
-        } catch (error) {
-            console.error('Status check failed:', error);
-            setIsESP32Connected(false);
-        }
-    };
-
-    // Check status every 5 seconds
-    setInterval(checkDeviceStatus, 5000);
-
-    // Poll device status from backend API
+    // --- Device status polling (backend only) ---
     const pollDeviceStatus = async () => {
       try {
         const response = await fetch('/api/device/status', {
@@ -2591,13 +2514,33 @@
         setIsESP32Connected(false);
       }
     };
-
-    // Start polling every 5 seconds
+  
     React.useEffect(() => {
       pollDeviceStatus();
       const interval = setInterval(pollDeviceStatus, 5000);
       return () => clearInterval(interval);
     }, []);
+  
+    // --- Device control (backend only) ---
+    const sendCommand = async (cmd) => {
+      try {
+        const [device, action] = cmd.split('_');
+        const response = await fetch('/api/device/control', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add your auth token if needed
+          },
+          body: JSON.stringify({ device, action: action.toUpperCase() })
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Optionally update UI or show a toast
+      } catch (error) {
+        setIsESP32Connected(false);
+      }
+    };
   </script>
 </head>
 <body class="min-h-screen font-sans">
